@@ -6,7 +6,7 @@ PMDCollab/SpriteCollab 공개 자료의 Walk/Idle 원본이다. 이미지 픽셀
 
 사용조건 원문: [CC BY-NC 4.0](LICENSE.CC_BY-NC_4.md), [PMDCollab_1](LICENSE.PMDCollab_1.md), [PMDCollab_2](LICENSE.PMDCollab_2.md). CC BY-NC는 비상업·크레딧·출처·변경 표시, PMDCollab_1은 원작자 크레딧 유지, PMDCollab_2는 원작자 크레딧 유지와 비영리 조건이다. 이 표는 원작 자산의 별도 권리를 팬 라이선스로 바꾸어 설명하지 않는다.
 
-연락처 데이터는 이 묶음에 포함하지 않는다. 자세한 기여 부분과 날짜는 credits.json에 있고, 원본의 credits.txt 링크도 각 항목에 있다.
+연락처 데이터는 이 묶음에 포함하지 않는다. 기여자·사용 조건은 아래 표에, 세부 기여 기록은 각 항목에 연결한 원본 자료에 있다.
 
 | 번호 | 포켓몬 | 선택 자료 | 원작자·기여자 | 실제 라이선스 | 출처 |
 |---|---|---|---|---|---|

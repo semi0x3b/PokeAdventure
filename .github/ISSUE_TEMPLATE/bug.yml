@@ -1,0 +1,41 @@
+name: 오류 제보
+description: 문제가 생긴 화면과 다시 해 볼 순서를 알려 주세요.
+title: "[오류] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        부모님이 작성하는 공개 제보입니다. 아이 이름·얼굴·비밀번호·백업 파일·브라우저 저장소 내용은 올리지 마세요.
+        보안 취약점이나 다른 사람의 정보가 보이는 문제는 공개하지 말고 저장소 Security의 비공개 신고를 이용해 주세요.
+  - type: textarea
+    id: steps
+    attributes:
+      label: 어떤 순서로 생겼나요?
+      placeholder: 예) 숲에 들어가기 → 도감 열기 → 화면을 가로로 돌리기
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 실제로 보인 것과 기대한 것
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 기기·브라우저
+      placeholder: 예) 아이패드 미니 5 / Safari / 홈 화면 앱 / 가로
+    validations:
+      required: true
+  - type: textarea
+    id: image
+    attributes:
+      label: 화면 (선택)
+      description: 시험용 별명을 쓰거나 이름을 가려 주세요. 저장 기록을 지우거나 백업을 공개할 필요는 없어요.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 공개 전 확인
+      options:
+        - label: 부모로서 작성하며 개인정보·비밀번호·백업 파일을 넣지 않았어요.
+          required: true

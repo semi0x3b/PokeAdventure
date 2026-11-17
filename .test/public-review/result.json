@@ -1,0 +1,44 @@
+{
+  "pass": true,
+  "sizes": [
+    {
+      "width": 390,
+      "height": 844,
+      "inside": true,
+      "noOverflow": true
+    },
+    {
+      "width": 734,
+      "height": 343,
+      "inside": true,
+      "noOverflow": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "inside": true,
+      "noOverflow": true
+    }
+  ],
+  "links": [
+    {
+      "href": "https://github.com/semi0x3b/PokeAdventure/issues/new/choose",
+      "rel": "noopener noreferrer",
+      "target": "_blank"
+    },
+    {
+      "href": "https://github.com/semi0x3b/PokeAdventure/security/advisories/new",
+      "rel": "noopener noreferrer",
+      "target": "_blank"
+    },
+    {
+      "href": "privacy.html",
+      "rel": "noopener noreferrer",
+      "target": "_blank"
+    }
+  ],
+  "keyboardFocus": true,
+  "credits": true,
+  "policy": true,
+  "gameApiRequests": 0
+}

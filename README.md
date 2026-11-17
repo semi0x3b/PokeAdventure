@@ -11,6 +11,12 @@
 
 기존 버전의 기기 캐시가 있다면 처음 수첩을 만들 때 이전과 같은 이름을 사용하세요. 부모 비밀번호는 이 기기에서 새로 정합니다. 브라우저 데이터 삭제·기기 분실에 대비해 백업을 보관하세요. 앱 안 부모 잠금은 기기 자체 잠금이나 스크린 타임을 대신하지 않습니다.
 
+## 제안과 기여
+
+[기능 제안·오류 제보](https://github.com/semi0x3b/PokeAdventure/issues/new/choose)는 부모가 작성하는 공개 공간입니다. 아이 이름·얼굴·연락처·비밀번호·백업 파일을 올리지 마세요. 게임 기록은 자동 첨부하지 않습니다. 보안 문제는 [비공개 신고](https://github.com/semi0x3b/PokeAdventure/security/advisories/new)로 받습니다.
+
+화면을 바꾸는 PR에는 같은 조건의 **전후 이미지가 필수**입니다. [기여 안내](CONTRIBUTING.md)와 [PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 확인하세요.
+
 ## 개발
 
 Node.js 22 이상에서 별도 패키지 설치 없이 실행합니다.
