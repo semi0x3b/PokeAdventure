@@ -1,0 +1,363 @@
+/* ---------- 글자 쓰기(단어집) ----------
+   색·글씨·모양은 tokens.css 값만 쓴다. 연습장 캔버스에는 테두리·transform 을 걸지 않는다(크기를 재서 글자를 그리기 때문).
+   테두리·깔린 그림자는 바깥 틀(.wordbook-stage)이 맡는다. */
+.wordbook { position: relative; max-width: 1000px; height: 100vh; height: 100dvh; display: flex; flex-direction: column; gap: var(--gap-m); }
+.wordbook-empty { font-size: var(--fs-l); text-align: center; }
+/* 제목: 연필 그림 + 글자 쓰기 */
+.wordbook-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  column-gap: var(--gap-l);
+}
+.wordbook-title { grid-column: 2; justify-self: center; position: relative; display: inline-flex; align-items: center; justify-content: center; margin: 0; white-space: nowrap; }
+.wordbook-pencil { --icon-size: 32px; position: absolute; right: calc(100% + var(--gap-s)); }
+.wordbook-header .wordbook-tabs { grid-column: 3; justify-self: start; }
+
+/* 하늘 바탕과 천천히 흐르는 구름 */
+.wordbook::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 70px 24px at 90px 14%, var(--c-glass) 96%, transparent),
+    radial-gradient(ellipse 46px 18px at 60px calc(14% - 14px), var(--c-glass) 96%, transparent),
+    radial-gradient(ellipse 90px 28px at 300px 62%, var(--c-glass) 96%, transparent),
+    radial-gradient(ellipse 56px 20px at 330px calc(62% - 16px), var(--c-glass) 96%, transparent),
+    var(--c-sky);
+  background-size: 520px 100%;
+  background-repeat: repeat-x;
+  animation: wordbook-clouds 70s linear infinite;
+  pointer-events: none;
+}
+
+/* 아이콘은 공통 색 아이콘(app.css)을 쓴다: 넘기기 = back 화살표(다음은 좌우 뒤집기), 목록 = 별, 지우기 = 지우개, 다 썼어요 = 체크. */
+
+/* 알약 버튼: 테두리 + 깔린 그림자, 누르면 내려앉는다 */
+.wordbook .button, .wordbook-tabs button {
+  border: var(--border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--press);
+  color: var(--c-ink);
+  font-weight: var(--fw-heavy);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.wordbook .button { background: var(--c-primary); color: var(--c-on-primary); }
+.wordbook .button.secondary { background: var(--c-surface); color: var(--c-ink); }
+.wordbook .button:active, .wordbook-tabs button:active:not(:disabled) { transform: translateY(3px); box-shadow: var(--press-down); }
+.wordbook .button:disabled { border-color: var(--c-disabled-ink); box-shadow: none; transform: translateY(4px); }
+.wordbook-actions .ui-icon { width: 28px; height: 28px; }
+.wordbook-list-button { width: var(--touch); padding: 0; }
+
+.wordbook-tabs { justify-content: center; flex-wrap: nowrap; }
+.wordbook-tabs button { background: var(--c-surface); }
+.wordbook-tabs button.active { background: var(--c-blue); color: var(--c-ink); box-shadow: var(--press); }
+.wordbook-tab-mark { font-size: var(--fs-l); line-height: 1; }
+.wordbook-tab-mark--ball { width: 1.1em; height: 1.1em; background: url('../img/art/balls/ball-red-small.png') center / contain no-repeat; }
+
+/* 목록: 큰 그림 카드 */
+.wordbook-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--gap-l) var(--gap-m);
+  align-content: start;
+  padding: var(--gap-s) var(--gap-s) var(--gap-l);
+  -webkit-overflow-scrolling: touch;
+}
+.wordbook-card {
+  --accent: var(--c-primary);
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--gap-s);
+  padding: var(--gap-m) var(--gap-s) var(--gap-s);
+  border: var(--border-strong);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  box-shadow: var(--press-strong);
+  color: var(--c-ink);
+  animation: wordbook-pop .84s cubic-bezier(.3, 1.5, .5, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.wordbook-card:nth-child(5n + 2) { --accent: var(--c-blue); }
+.wordbook-card:nth-child(5n + 3) { --accent: var(--c-green); }
+.wordbook-card:nth-child(5n + 4) { --accent: var(--c-gold); }
+.wordbook-card:nth-child(5n + 5) { --accent: var(--c-purple); }
+.wordbook-card:active { transform: translateY(5px); box-shadow: var(--press-down); }
+.wordbook-card .wordbook-picture { --learning-picture-size: 68px; }
+.wordbook-card .wordbook-word { padding: 0; font-size: var(--fs-xl); }
+.wordbook-card[data-done="true"]::after {
+  content: '';
+  position: absolute;
+  top: var(--gap-s);
+  right: var(--gap-s);
+  width: 26px;
+  height: 26px;
+  background: url('../img/art/icons/star.png') center / contain no-repeat;
+}
+
+/* 그림·낱말 카드와 큰 쓰기 칸. 낱말이 바뀌어도 연습장 위치는 움직이지 않는다. */
+.wordbook-content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--gap-m); padding-bottom: var(--gap-s); }
+.wordbook-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(112px, 27%) minmax(0, 1fr); gap: var(--gap-m); }
+.wordbook-content--leaving .wordbook-workspace, .wordbook-content--leaving .wordbook-bubble, .wordbook-content--leaving .wordbook-stamp { opacity: 0; transition: opacity .35s ease; }
+.wordbook-canvas { animation: wordbook-fade-in .5s ease both; }
+@keyframes wordbook-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.wordbook-sample {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: 1fr auto;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  column-gap: var(--gap-l);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--gap-m);
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-paper);
+  color: var(--c-ink);
+  box-shadow: var(--press);
+}
+.wordbook-sample .wordbook-picture { --learning-picture-size: min(20vw, 88px); grid-row: 1 / 3; }
+.wordbook-sample .wordbook-word { font-size: var(--fs-answer); letter-spacing: .03em; }
+.wordbook-translation { font-size: var(--fs-m); color: var(--c-ink-soft); font-weight: var(--fw-bold); }
+.wordbook-letter { display: inline-block; }
+.wordbook-letter.is-current { color: var(--c-primary); }
+.wordbook-letter.is-written { color: var(--c-blue-press); }
+.wordbook-guidance { position: absolute; z-index: 2; top: var(--gap-s); left: var(--gap-m); right: var(--gap-m); display: flex; gap: var(--gap-s); justify-content: space-between; align-items: center; pointer-events: none; color: var(--c-ink-soft); font-size: var(--fs-s); font-weight: var(--fw-bold); }
+.wordbook-progress { white-space: nowrap; color: var(--c-blue-press); }
+/* 들어올 때 시작 화면: 약간 어두운 반투명 바탕에 흰 글씨(테두리 글씨), 떴다가 사라진다. 누르는 것은 막지 않는다. */
+.wordbook-intro { position: fixed; inset: 0; z-index: 80; display: grid; place-content: center; justify-items: center; gap: var(--gap-m); background: var(--c-scrim); pointer-events: none; animation: wordbook-intro 2.2s ease both; }
+.wordbook-intro .ui-icon { --icon-size: 84px; animation: wordbook-intro-pop .6s cubic-bezier(.3, 1.6, .5, 1) .15s both; }
+.wordbook-intro-text { margin: 0; color: var(--c-surface); font-size: var(--fs-question); font-weight: var(--fw-heavy); text-shadow: var(--text-outline); animation: wordbook-intro-pop .6s cubic-bezier(.3, 1.6, .5, 1) .3s both; }
+@keyframes wordbook-intro { 0% { opacity: 0; } 14% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes wordbook-intro-pop { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: scale(1); } }
+.wordbook-picture { display: inline-flex; }
+.wordbook-picture img { display: block; width: var(--learning-picture-size); height: var(--learning-picture-size); object-fit: contain; }
+.wordbook-word { font-weight: var(--fw-heavy); letter-spacing: .08em; }
+
+.wordbook-stage {
+  --trace-inset-top: 40px;
+  --trace-inset-left: 0px;
+  --trace-inset-right: 0px;
+  position: relative;
+  min-width: 0;
+  min-height: 120px;
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  overflow: hidden;
+}
+.wordbook-canvas {
+  --trace-guide: var(--c-wrong-bg);
+  --trace-ink: var(--c-blue-press);
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  font-family: var(--font);
+}
+.wordbook-stage--shake { animation: wordbook-shake .45s; }
+
+.wordbook-bubble {
+  /* 말풍선 상자 없이 글씨만(2026-11-13 사용자). 안내·다시 해 보자는 연습장 위쪽 가운데(세로는 구석 그림 줄 아래 띠), 칭찬은 스티커 바로 아래. */
+  position: absolute;
+  left: 50%;
+  top: calc(var(--gap-s) + 24px);
+  z-index: 2;
+  translate: -50% 0;
+  width: max-content;
+  max-width: 92%;
+  margin: 0;
+  color: var(--c-ink);
+  font-size: var(--fs-m);
+  font-weight: var(--fw-heavy);
+  line-height: 1.25;
+  text-align: center;
+  word-break: keep-all;
+  pointer-events: none;
+}
+.wordbook-bubble[hidden] { display: none; }
+/* 칭찬 글: 가운데 스티커 바로 아래, 배틀 정답 말(.gb-speech.correct)과 같은 노란 글씨 + 남색 테두리(2026-11-13 사용자). 스티커 위에 그린다. */
+.wordbook-bubble[data-kind="correct"] { z-index: 4; top: calc(50% + var(--wb-sticker) / 2 - .4em); color: var(--c-gold); line-height: 1.3; text-shadow: var(--text-outline); }
+.wordbook-bubble--show { animation: wordbook-bubble .4s cubic-bezier(.3, 1.6, .5, 1) both; }
+/* 스티커가 선물 칸으로 날아가기 시작하면(js STAMP_FLY_AT) 칭찬 글은 그 자리에서 짧게 사라진다. */
+.wordbook-bubble.wordbook-bubble--leaving { opacity: 0; animation: none; transition: opacity .25s ease; }
+
+/* 다 썼어요 통과: 연습장 위 말풍선 아래 칸에 큰 별 도장(img/art/icons/star.png)이 쾅 찍히고 작은 별이 촤라라 흩어진 뒤 사라진다.
+   흩어지는 별은 연습장 밖까지 날아간다. 누를 수 없는 연출이라 손가락 입력은 그대로 아래로 지나간다. */
+/* 스티커는 연습장 가운데에 크게, 쓴 글자를 덮어도 된다(2026-11-14 사용자 「가운데 내 글씨 덮고 크게해도 돼」). 칭찬 글은 그 바로 아래. */
+/* 연습장 폭·높이 중 좁은 쪽에 맞춘 크기(container 단위). */
+.wordbook-stage { container-type: size; --wb-sticker: min(72cqw, 60cqh, 340px); }
+.wordbook-stamp { position: absolute; top: 50%; left: 50%; translate: -50% -50%; z-index: 3; width: var(--wb-sticker); height: var(--wb-sticker); display: grid; grid-template: 100% / 100%; place-items: center; pointer-events: none; }
+.wordbook-stamp > * { grid-area: 1 / 1; }
+.wordbook-stamp-mark {
+  /* 피카츄 스티커(2026-11-13 사용자가 준 그림 그대로, img/art/stickers/pikachu-sticker.webp). 살짝 뜬 그림자만 더한다. */
+  height: 100%;
+  aspect-ratio: 1;
+  background: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png') center / contain no-repeat;
+  filter: drop-shadow(0 6px 8px var(--c-scrim));
+  rotate: -6deg;
+  animation: wordbook-stamp 2s ease-out both;
+}
+/* 선물 칸으로 날아갈 도장은 사라지지 않고 찍힌 채 기다린다. */
+.wordbook-stamp--collect .wordbook-stamp-mark { animation: wordbook-stamp-land 1.3s ease-out both; }
+.wordbook-stamp-flyer { position: fixed; z-index: 70; margin: 0; pointer-events: none; animation: none; transform-origin: 50% 50%; }
+.wordbook-gift-ball[data-on="true"][data-waiting="true"] { border: 2px dashed var(--c-line); rotate: 0deg; animation: none; }
+.wordbook-spark {
+  width: 34px;
+  height: 34px;
+  background: url('../img/art/icons/star.png') center / contain no-repeat;
+  opacity: 0;
+  animation: wordbook-spark 1s cubic-bezier(.2, .7, .3, 1) var(--d, 0ms) both;
+}
+
+.wordbook-actions { display: grid; grid-template-columns: var(--touch) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: var(--gap-s); padding-bottom: 4px; }
+.wordbook-actions .button { min-height: var(--touch); padding: 0 var(--gap-m); gap: 6px; white-space: nowrap; }
+.wordbook-actions .button:last-child { padding: 0 var(--gap-s); }
+
+/* 다음 포켓몬 선물까지: 통과할 때마다 피카츄 도장이 한 칸씩 쾅 찍힌다(5칸, 로그인한 계정만, 2026-11-13 사용자).
+   피카츄 그림은 PokeAPI 그림(img/thumb/25.webp)을 동그란 도장 테두리 안에 넣기만 한다. 빈 칸은 점선 동그라미에 흐린 피카츄. */
+.wordbook-gift-balls { display: flex; justify-content: center; align-items: center; gap: 6px; }
+.wordbook-gift-ball {
+  /* 빈 칸: 점선 동그라미 안에 흐린 스티커 모양. 붙은 칸: 작은 피카츄 스티커(큰 스티커와 같은 그림). */
+  position: relative;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border: 2px dashed var(--c-line);
+  border-radius: 50%;
+}
+.wordbook-gift-ball::before {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  background-color: var(--c-line);
+  -webkit-mask: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png') center / contain no-repeat;
+  mask: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png') center / contain no-repeat;
+}
+.wordbook-gift-ball[data-on="true"] { border-color: transparent; rotate: -10deg; }
+.wordbook-gift-ball[data-on="true"]::before {
+  inset: -4%;
+  background: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png') center / contain no-repeat;
+  -webkit-mask: none;
+  mask: none;
+  filter: drop-shadow(0 2px 3px var(--c-scrim));
+}
+.wordbook-gift-ball[data-on="true"][data-waiting="true"] { border-color: var(--c-line); }
+.wordbook-gift-ball[data-on="true"][data-waiting="true"]::before { inset: 14%; background: var(--c-line); -webkit-mask: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png') center / contain no-repeat; mask: url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png') center / contain no-repeat; filter: none; }
+.wordbook-gift-ball[data-on="true"]:nth-child(even) { rotate: 8deg; }
+.wordbook-gift-ball[data-fresh="true"] { animation: wordbook-pikachu-stamp .8s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes wordbook-pikachu-stamp { 0% { transform: scale(2.6); opacity: 0; } 45% { transform: scale(.82); opacity: 1; } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+@keyframes wordbook-clouds { from { background-position-x: 0; } to { background-position-x: 520px; } }
+@keyframes wordbook-pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes wordbook-rise { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@keyframes wordbook-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes wordbook-shake { 20%, 60% { translate: -10px 0; } 40%, 80% { translate: 10px 0; } 100% { translate: 0 0; } }
+@keyframes wordbook-bubble { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: scale(1); } }
+/* 도장: 크게 떠서 쾅 내려앉으며 줄었다가 살짝 흔들리고, 잠깐 머문 뒤 사라진다 */
+@keyframes wordbook-stamp {
+  0% { opacity: 0; transform: scale(2.6) rotate(-14deg); }
+  16% { opacity: 1; transform: scale(.82) rotate(0); }
+  24% { transform: scale(1.1) rotate(0); }
+  31% { transform: scale(1) rotate(-8deg); }
+  38% { transform: scale(1) rotate(6deg); }
+  45% { transform: scale(1) rotate(-3deg); }
+  52% { transform: scale(1) rotate(0); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+@keyframes wordbook-stamp-land {
+  0% { opacity: 0; transform: scale(2.6) rotate(-14deg); }
+  26% { opacity: 1; transform: scale(.82) rotate(0); }
+  38% { transform: scale(1.1) rotate(0); }
+  50% { transform: scale(1) rotate(-8deg); }
+  62% { transform: scale(1) rotate(6deg); }
+  74% { transform: scale(1) rotate(-3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-10deg); }
+}
+@keyframes wordbook-spark { 0% { opacity: 1; transform: translate(0, 0) scale(.3); } 65% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(var(--s, 1)) rotate(140deg); } }
+
+/* 가로에서는 그림·낱말이 왼쪽, 쓰기 칸이 오른쪽을 채운다. */
+@media (min-width: 720px), (orientation: landscape) {
+  .wordbook { max-width: 1400px; }
+  .wordbook-workspace { grid-template-columns: minmax(132px, 24%) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .wordbook-sample { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; justify-items: center; gap: var(--gap-s); }
+  .wordbook-sample .wordbook-picture { --learning-picture-size: min(17vw, 190px); grid-row: auto; align-self: center; }
+  .wordbook-sample .wordbook-word { padding: var(--gap-s) 0; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .wordbook { gap: var(--gap-s); padding-bottom: calc(var(--safe-bottom) + var(--gap-s)); }
+  .wordbook-header { padding-left: calc(var(--touch) + var(--gap-s)); padding-right: calc(var(--touch) + var(--gap-s)); }
+  .wordbook-content { gap: var(--gap-s); padding-bottom: 0; }
+  .wordbook-workspace { grid-template-columns: minmax(116px, 21%) minmax(0, 1fr); gap: var(--gap-s); }
+  .wordbook-sample { padding: var(--gap-s); gap: 0; }
+  .wordbook-sample .wordbook-picture { --learning-picture-size: min(27dvh, 112px); }
+  .wordbook-sample .wordbook-word { font-size: var(--fs-l); padding: 0; }
+  .wordbook-translation { font-size: var(--fs-s); }
+  .wordbook-gift-balls { gap: 4px; position: absolute; right: calc(var(--safe-right) + var(--gap-l)); top: calc(var(--safe-top) + var(--touch) + 4px); z-index: 3; pointer-events: none; }
+  .wordbook-gift-ball { width: 24px; height: 24px; }
+  .wordbook-guidance { font-size: var(--fs-s); top: 4px; }
+  .wordbook-guide-text { display: none; }
+  .wordbook-progress { margin-left: auto; }
+}
+@media (max-width: 560px) {
+  .wordbook { gap: var(--gap-s); }
+  .wordbook-title { font-size: var(--fs-l); }
+  .wordbook-pencil { --icon-size: 28px; }
+  .wordbook-tabs button { min-height: 44px; padding-left: var(--gap-s); padding-right: var(--gap-s); font-size: var(--fs-m); }
+  .wordbook-tab-mark { font-size: var(--fs-m); }
+  .wordbook-actions { grid-template-columns: var(--touch) minmax(0, 1fr) var(--touch) minmax(0, 1.2fr); }
+  .wordbook-actions .button { font-size: var(--fs-m); padding: 0 var(--gap-s); gap: 4px; }
+  .wordbook-actions .ui-icon { width: 24px; height: 24px; }
+  .wordbook-actions [data-wordbook-action="clear"] > span:last-child, .wordbook-actions [data-wordbook-action="complete"] > .ui-icon { display: none; }
+  .wordbook-guidance { flex-direction: column; gap: 2px; }
+  .wordbook-stage { --trace-inset-top: 56px; }
+  .wordbook-sample .wordbook-word { font-size: var(--fs-xl); }
+  .wordbook-gift-ball { width: 32px; height: 32px; }
+}
+@media (min-width: 900px) {
+  .wordbook-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .wordbook-card .wordbook-picture { --learning-picture-size: 88px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordbook::before, .wordbook-card, .wordbook-content, .wordbook-sample .wordbook-picture { animation: none !important; }
+  .wordbook-stage--shake, .wordbook-gift-ball[data-fresh="true"] { animation: none; }
+  /* 별 도장은 움직임 없이 다음 낱말로 넘어갈 때까지 잠깐 보였다 사라진다. 흩어지는 별은 띄우지 않는다. */
+  .wordbook-stamp-mark, .wordbook-stamp--collect .wordbook-stamp-mark { animation: none; }
+  .wordbook-bubble.wordbook-bubble--leaving { transition: none; }
+  .wordbook-intro .ui-icon, .wordbook-intro-text { animation: none; }
+  .wordbook-spark { display: none; }
+}
+/* 지우개가 켜진 동안(눌린 모양). 배치는 건드리지 않는다. */
+.wordbook .button.is-on { background: var(--c-gold); color: var(--c-gold-ink); }
+
+/* 320px 폭에서도 글씨를 줄이지 않고 장식 아이콘 여백을 양보한다. */
+@media (max-width: 360px) {
+  .wordbook-header { padding-left: 0; padding-right: 0; }
+  .wordbook-tab-mark { display: none; }
+  .wordbook-actions [data-wordbook-action="replay"] > .ui-icon { display: none; }
+}
+
+/* 제목은 화면 가운데, 언어 선택은 그 오른쪽. 좁은 화면에서만 다음 줄로 옮긴다. */
+@media (max-width: 1000px) {
+  .wordbook-header { column-gap: var(--gap-m); }
+  .wordbook-header h2 { font-size: var(--fs-l); }
+  .wordbook-pencil { --icon-size: 26px; }
+  .wordbook-tabs button { padding: 0 var(--gap-s); font-size: var(--fs-s); min-height: 44px; }
+  .wordbook-tab-mark { display: none; }
+}
+@media (max-width: 680px) {
+  .wordbook-header { grid-template-columns: minmax(0, 1fr); padding-left: 0; padding-right: 0; gap: var(--gap-s); }
+  .wordbook-title { grid-column: 1; min-height: var(--touch); }
+  .wordbook-header .wordbook-tabs { grid-column: 1; justify-self: center; }
+}

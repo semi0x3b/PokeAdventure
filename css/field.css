@@ -1,0 +1,295 @@
+/* ---------- 필드: 걸어 다니며 몬스터볼을 찾는 도트 타일 지도 화면 ----------
+   색·글씨는 tokens.css 값만 쓴다. 도트 그림은 정수배로만 키우고(image-rendering: pixelated) 흐리게 늘리지 않는다.
+   움직임은 transform·opacity 만, 모션 줄이기에서는 반복 장면을 끈다.
+   층(z-index, .field-screen 안): 바닥 캔버스 0 · 지도와 함께 움직이는 구름 그림자 500 · 트레이너 뒤 볼·동행 1000~1800
+   · 트레이너 캔버스 2000 · 트레이너 앞 볼·동행 2100~2900 · 나무 윗부분·지붕·높은 풀(위층 캔버스) 3500
+   · 출구 지역 이름 3600 · 날리는 잎·모래 4000 · 미니맵 4400 · 지역 이름 4500 · 말풍선 4600 */
+.field-screen {
+  /* 미니맵 한 변: 세로 폰은 화면 폭의 27% 안팎, 가로 화면·태블릿은 비슷한 실제 크기(88~128px) */
+  --mini: clamp(88px, min(27vw, 30vh), 128px);
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--c-paper);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.field-wrap { position: absolute; inset: 0; overflow: hidden; }
+.field-canvas, .field-actor, .field-over { position: absolute; inset: 0; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.field-canvas { z-index: 0; outline: none; cursor: pointer; }
+.field-actor { z-index: 2000; pointer-events: none; }
+.field-over { z-index: 3500; pointer-events: none; }
+/* 새로 들어온 지역만: 카메라가 살짝 다가갔다가 물러나며 시작 */
+.field-screen[data-intro="true"] .field-wrap { animation: field-intro 1.8s cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes field-intro { from { transform: scale(1.16); } to { transform: none; } }
+/* 노치·홈 막대 여백을 game.js 가 읽어 가는 숨은 요소 */
+.field-safe-probe {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+
+/* 지역 이름: 위쪽 가운데, 모서리 버튼 줄 높이에 맞춰 작게 한 번 */
+.field-place {
+  position: absolute;
+  z-index: 4500;
+  top: calc(var(--safe-top) + var(--gap-s) + (var(--touch) - 36px) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 var(--gap-s);
+  color: var(--c-surface);
+  font-size: var(--fs-m);
+  font-weight: var(--fw-heavy);
+  text-shadow: var(--text-outline);
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* 폰(세로 폭 720 이하·가로 키 520 이하): 오른쪽 위에 「도감」 알약(--corner-pill)이 생겨 가운데 이름과 부딪히고(세로), 키 낮은 가로 화면에서는
+   트레이너 머리 위 말풍선이 가운데 이름까지 올라왔다 → 이름을 왼쪽 「뒤로」 버튼 바로 옆에 둔다(「← 초록 숲」). 태블릿·PC 는 가운데 그대로. */
+@media (orientation: portrait) and (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
+  .field-place { left: calc(var(--safe-left) + var(--gap-s) + var(--touch) + 4px); transform: none; }
+}
+
+/* 아주 좁은 세로 화면은 지역 이름만 버튼 줄 아래로 내려 온전히 보이게 한다. */
+@media (orientation: portrait) and (max-width: 350px) {
+  .field-place { top: calc(var(--safe-top) + var(--gap-s) * 2 + var(--touch)); left: calc(var(--safe-left) + var(--gap-s)); }
+}
+
+/* 출구 아치 위 갈 지역 이름: 누를 수 없는 글자라 상자 없이 테두리 글씨(지역 이름표와 같은 결, 한 단계 작게).
+   game.js 가 아치 윗부분 가운데로 옮긴다(위층 캔버스 3500 위, 날리는 잎 4000 아래). */
+.field-exit-name {
+  position: absolute;
+  z-index: 3600;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  margin: 0;
+  color: var(--c-surface);
+  font-size: var(--fs-s);
+  font-weight: var(--fw-heavy);
+  line-height: 1.2;
+  text-shadow: var(--text-outline);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.field-exit-name[hidden] { display: none; }
+
+/* 미니맵: 아래 오른쪽 구석(노치·홈 막대 안쪽). 누를 수 없는 그림이라 테두리·눌림 그림자 없이 반투명 바탕·둥근 모서리만.
+   아래 캔버스 = 지형(한 번), 위 캔버스 = 보이는 범위·출구·볼·트레이너 점(매 프레임). 트레이너가 밑에 오면 옅어진다. */
+.field-mini {
+  position: absolute;
+  z-index: 4400;
+  right: calc(var(--safe-right) + var(--gap-s));
+  bottom: calc(var(--safe-bottom) + var(--gap-s));
+  width: var(--mini);
+  height: var(--mini);
+  padding: 4px;
+  border-radius: var(--r-s);
+  background: var(--c-glass);
+  opacity: .92;
+  transition: opacity .2s ease;
+  pointer-events: none;
+}
+.field-mini.is-faded { opacity: .3; }
+.field-mini canvas {
+  position: absolute;
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  border-radius: calc(var(--r-s) - 4px);
+}
+
+/* 말풍선: 트레이너 머리 위(game.js 가 위치를 옮긴다)에 잠깐.
+   상자는 지도와 같은 Ninja Adventure 도트 말풍선 판(img/yard/theme-bubble-panel.png, 16×16, 모서리 4·아래 띠 5도트)을
+   9칸 늘이기로 지도 도트 배율(--px, game.js 가 넣는 정수)만큼 키워 그린다. 글씨는 tokens 값 그대로. */
+.field-say {
+  --px: 3;
+  position: absolute;
+  z-index: 4600;
+  left: 0;
+  top: 0;
+  max-width: min(70vw, 280px);
+  margin: 0;
+  padding: 0 var(--gap-s);
+  border-style: solid;
+  border-width: calc(var(--px) * 4px) calc(var(--px) * 4px) calc(var(--px) * 5px);
+  border-image: url('../img/yard/theme-bubble-panel.png') 4 4 5 fill stretch;
+  image-rendering: pixelated;
+  color: var(--c-ink);
+  font-size: var(--fs-s);
+  font-weight: var(--fw-heavy);
+  text-align: center;
+  word-break: keep-all;
+  pointer-events: none;
+}
+.field-say[hidden] { display: none; }
+/* 꼬리: 8×5도트 그림(img/yard/bubble-tail.png, Codex)을 판 아랫변 가운데에, 윗줄 1도트가 판 외곽선과 겹치게 같은 배율로 붙여
+   트레이너를 가리킨다. game.js placeBubble 이 꼬리가 나온 만큼(4도트) 말풍선을 더 띄운다. */
+.field-say::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - var(--px) * 4px);
+  top: calc(100% + var(--px) * 4px);
+  width: calc(var(--px) * 8px);
+  height: calc(var(--px) * 5px);
+  background: url('../img/yard/bubble-tail.png') 0 0 / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.field-say.is-popping { animation: field-say-pop .28s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes field-say-pop { from { scale: .6; opacity: 0; } to { scale: 1; opacity: 1; } }
+
+/* 몬스터볼: 누르는 칸은 --touch(52px), 도트 볼 그림 한 칸은 --ball(16도트 × 타일 배율, game.js 가 정함) */
+.field-ball-target {
+  --ball: 48px;
+  position: absolute;
+  z-index: 1500;
+  left: 0;
+  top: 0;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  will-change: transform;
+}
+.field-ball-target[hidden] { display: none; }
+/* 발밑 도트 그림자: 볼이 굴러도 돌지 않게 단추에 붙인다 */
+.field-ball-target::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: calc(50% + var(--ball) / 2 - var(--ball) * .3);
+  width: calc(var(--ball) * .75);
+  height: calc(var(--ball) * .44);
+  margin-left: calc(var(--ball) * -.375);
+  background: url('../img/field-tiles/shadow.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  opacity: .32;
+}
+.field-ball-body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--ball);
+  height: var(--ball);
+  margin: calc(var(--ball) / -2) 0 0 calc(var(--ball) / -2);
+  pointer-events: none;
+  will-change: transform;
+}
+.field-ball-art { display: block; width: 100%; height: 100%; background: no-repeat 0 0 / 400% 100%; image-rendering: pixelated; pointer-events: none; }
+/* 금색 볼: 부드럽게 숨 쉬는 빛과 반짝이는 도트 별 둘 */
+.field-ball-target[data-gold="true"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--ball) * 2);
+  height: calc(var(--ball) * 2);
+  margin: calc(var(--ball) * -1) 0 0 calc(var(--ball) * -1);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c-gold), transparent);
+  animation: field-gold-glow 1.4s ease-in-out infinite alternate;
+}
+.field-ball-sparkle { display: none; }
+.field-ball-target[data-gold="true"] .field-ball-sparkle {
+  display: block;
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--c-surface);
+  clip-path: polygon(33% 0, 67% 0, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0 67%, 0 33%, 33% 33%);
+  pointer-events: none;
+  animation: field-twinkle 1.3s steps(3) infinite;
+}
+.field-ball-target[data-gold="true"] .field-ball-sparkle:nth-of-type(2) { right: -2px; top: 0; }
+.field-ball-target[data-gold="true"] .field-ball-sparkle:nth-of-type(3) { left: 0; bottom: 4px; width: 9px; height: 9px; animation-delay: -.65s; }
+@keyframes field-gold-glow { from { opacity: .45; transform: scale(.88); } to { opacity: .95; transform: scale(1.08); } }
+@keyframes field-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+
+/* 동행 포켓몬(픽셀 걷기 시트) */
+.field-companion { position: absolute; z-index: 1500; left: 0; top: 0; pointer-events: none; will-change: transform; image-rendering: pixelated; }
+
+/* ---------- 살아 있는 장면(물결·높은 풀 흔들림은 지도 캔버스가 그린다) ---------- */
+/* 지도와 함께 움직이는 층(크기·위치는 game.js 가 지도 크기·카메라로 정한다) */
+.field-ambient-world { position: absolute; z-index: 500; left: 0; top: 0; overflow: hidden; pointer-events: none; will-change: transform; }
+/* 도시: 지도 위를 천천히 지나가는 구름 그림자. 줄(track)이 지도 너비라서 -50%~100% 로 지도 왼쪽 밖에서 오른쪽 밖까지 간다 */
+.field-cloud-track { position: absolute; left: 0; width: 100%; height: 0; animation: field-cloud 46s linear infinite; }
+.field-cloud-track--slow { animation-duration: 64s; animation-delay: -30s; }
+.field-cloud-shadow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36%;
+  aspect-ratio: 2;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c-scrim), transparent);
+  opacity: .28;
+}
+@keyframes field-cloud { from { transform: translateX(-50%); } to { transform: translateX(100%); } }
+
+/* 화면에 붙은 층: 숲 도트 나뭇잎, 사막 모래 알갱이 */
+.field-weather { position: absolute; z-index: 4000; inset: 0; overflow: hidden; pointer-events: none; }
+.field-leaf { position: absolute; top: -24px; width: 9px; height: 6px; opacity: 0; animation: field-leaf-fall 9s linear infinite; }
+.field-leaf > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--c-good);
+  box-shadow: 3px 3px 0 var(--c-green-press);
+  animation: field-leaf-sway 2.2s steps(4) infinite alternate;
+}
+.field-leaf:nth-child(3n) > span { background: var(--c-gold); box-shadow: 3px 3px 0 var(--c-gold-press); }
+@keyframes field-leaf-fall {
+  0% { opacity: 0; transform: translate(0, 0); }
+  8%, 90% { opacity: .9; }
+  100% { opacity: 0; transform: translate(-70px, calc(100vh + 48px)); }
+}
+@keyframes field-leaf-sway { from { transform: translateX(-12px); } to { transform: translateX(12px); } }
+.field-grain { position: absolute; left: 0; width: 6px; height: 6px; background: var(--c-gold); box-shadow: 18px 9px 0 var(--c-gold-press), 40px -6px 0 var(--c-gold); opacity: 0; animation: field-grain 5s linear infinite; }
+@keyframes field-grain {
+  0% { opacity: 0; transform: translateX(-60px); }
+  15%, 80% { opacity: .75; }
+  100% { opacity: 0; transform: translateX(calc(100vw + 60px)); }
+}
+
+/* 창이 열려 있는 동안에는 장면도 멈춘다 */
+.modal-open .field-screen *, .modal-open .field-screen *::before { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .field-weather, .field-ambient-world { display: none; }
+  .field-screen[data-intro="true"] .field-wrap, .field-say.is-popping { animation: none; }
+  .field-ball-target[data-gold="true"]::before, .field-ball-target[data-gold="true"] .field-ball-sparkle { animation: none !important; opacity: .9; }
+}
+/* 만남 「!」: 마당과 같은 도트 감정 말풍선(img/yard/emote-exclaim.png, 14×13)을 트레이너 머리 위에 톡(게임 「뜨든—」 순간).
+   도트 배율(--alert-px)은 game.js 가 지도 배율의 1.5배를 정수로 반올림해 넣는다(정수라 도트 굵기가 고르다). */
+.field-alert {
+  position: absolute;
+  z-index: 4700;
+  left: 0;
+  top: 0;
+  translate: -50% -100%;
+  pointer-events: none;
+}
+.field-alert img {
+  display: block;
+  width: calc(var(--alert-px, 4) * 14px);
+  height: auto;
+  max-width: none;
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;
+}
+.field-alert:not([hidden]) img { animation: field-alert-pop .35s cubic-bezier(.3, 1.8, .5, 1) both; }
+@keyframes field-alert-pop { 0% { scale: .4; opacity: 0; } 60% { scale: 1.2; opacity: 1; } 100% { scale: 1; } }

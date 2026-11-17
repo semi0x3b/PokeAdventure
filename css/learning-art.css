@@ -1,0 +1,58 @@
+/* 학습 그림. 낱말 그림 표(window.LEARN_PICTURES)에 있으면 ARASAAC 그림(img), 없으면 예전 그림판 칸(span).
+   img/battle/learning-atlas.webp 는 tools/slice-battle-art.py 가 Codex 그림판 4장을 균일한 8×8 칸으로
+   다시 묶은 것(칸마다 투명 여백이 있어 옆 칸이 비치지 않는다). 칸 순서는 js/learning-art.js 의 pictures 배열과 같다.
+   크기는 쓰는 곳에서 --learning-picture-size 로 정한다(배틀 팝업은 battle-view.css, 단어집은 wordbook.css). */
+.learning-picture {
+  display: inline-block;
+  width: var(--learning-picture-size, 1em);
+  height: var(--learning-picture-size, 1em);
+  flex: 0 0 auto;
+  vertical-align: -0.12em;
+  background-image: url("../img/battle/learning-atlas.webp");
+  background-repeat: no-repeat;
+  background-size: 800% 800%;
+}
+
+/* ARASAAC 그림(img 요소)은 그림판 배경을 쓰지 않고 그림 자체를 칸에 맞춘다. */
+img.learning-picture {
+  background: none;
+  object-fit: contain;
+}
+
+/* 그림 줄(모양·낱말 규칙): 그림을 한 줄로 늘어놓고 마지막은 빈칸(?). 그림 칸(.gb-art, 크기 컨테이너) 폭을 칸 수(--cells, 빈칸 포함)로 나눠 채운다. */
+.learning-sequence {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-s);
+}
+.learning-sequence > img.learning-picture,
+.learning-sequence > .learning-blank {
+  width: min(calc((100cqw - (var(--cells, 6) - 1) * var(--gap-s)) / var(--cells, 6)), 90cqh, 96px);
+  height: min(calc((100cqw - (var(--cells, 6) - 1) * var(--gap-s)) / var(--cells, 6)), 90cqh, 96px);
+  flex: 0 0 auto;
+}
+/* 크기 규칙의 ‘작은 ’ 그림: 칸은 그대로, 그림만 작게(줄 그림·보기 그림 같은 비율). */
+.learning-small { scale: .6; }
+.learning-blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: var(--border);
+  border-radius: var(--r-m);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-size: var(--fs-question);
+  font-weight: var(--fw-heavy);
+  line-height: 1;
+}
+
+.learning-picture-unavailable {
+  display: inline-block;
+  padding: 0.1em 0.25em;
+  border: 1px solid currentColor;
+  font-size: 0.5em;
+  line-height: 1.5;
+  vertical-align: middle;
+}

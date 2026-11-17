@@ -1,0 +1,145 @@
+내 마당(js/yard.js·css/yard.css) 도트 그림 출처
+
+묶음: Ninja Adventure - Asset Pack
+만든 사람: Pixel-boy (https://pixel-boy.itch.io/), AAA
+받은 곳: https://pixel-boy.itch.io/ninja-adventure-asset-pack (2026-11-13 내려받음, "Ninja Adventure - Asset Pack.zip", 2026-03-29 판)
+라이선스: Creative Commons Zero (CC0 1.0 Universal). 상업적 이용 포함 자유. 출처 표기는 필수가 아니지만 남긴다.
+원본 README 문구: "They are released under the Creative Commons Zero (CC0) license. You can use any and all of the assets found in this package in your own games, even commercial ones. Attribution is not required but appreciated."
+
+이 폴더 파일 ← 묶음 안 원본 경로(그림은 바꾸지 않고 이름만 바꿔 복사)
+- tileset-floor.png         ← Backgrounds/Tilesets/TilesetFloor.png       (풀밭·흙밭)
+- tileset-nature.png        ← Backgrounds/Tilesets/TilesetNature.png      (나무·덤불·꽃)
+- tileset-house.png         ← Backgrounds/Tilesets/TilesetHouse.png       (나무 울타리 한 칸만 사용)
+- tileset-floor-detail.png  ← Backgrounds/Tilesets/TilesetFloorDetail.png (풀 포기·작은 꽃)
+- plant.png                 ← Backgrounds/Animated/Plant/SpriteSheet16x16.png (흔들리는 데이지 4프레임)
+- leaf.png, leaf-pink.png   ← FX/Particle/Leaf.png, FX/Particle/LeafPink.png (날아가는 나뭇잎)
+- clouds.png                ← FX/Particle/Clouds.png (구름 그림자로 어둡게 칠해 씀)
+- emote-heart.png           ← Ui/Emote/emote27.png
+- emote-happy.png           ← Ui/Emote/emote18.png
+- emote-star.png            ← Ui/Emote/emote29.png
+- emote-exclaim.png         ← Ui/Emote/emote21.png
+- emote-question.png        ← Ui/Emote/emote23.png
+- theme-bubble-panel.png    ← Ui/Theme/Wip/ThemeBubble/nine_path_panel.png (말풍선 9칸 판: 필드 말풍선·마당 멘트, 2026-11-13)
+
+bubble-tail.png(말풍선 꼬리 8×5)는 이 묶음이 아니다: Codex 이미지 생성으로 이 게임 전용으로 그린 것(2026-11-13, docs/ASSETS.md).
+포켓몬 그림은 이 묶음이 아니다: 픽셀 걷기는 img/field/<id>(SpriteCollab, js/data/field-sprites.js 에 포켓몬별 출처), 대체 그림은 img/model/front(PokeAPI).
+
+----- 원본 LICENSE.txt (CC0 1.0 Universal 전문) -----
+
+CC0 1.0 Universal
+
+Statement of Purpose
+
+The laws of most jurisdictions throughout the world automatically confer
+exclusive Copyright and Related Rights (defined below) upon the creator and
+subsequent owner(s) (each and all, an "owner") of an original work of
+authorship and/or a database (each, a "Work").
+
+Certain owners wish to permanently relinquish those rights to a Work for the
+purpose of contributing to a commons of creative, cultural and scientific
+works ("Commons") that the public can reliably and without fear of later
+claims of infringement build upon, modify, incorporate in other works, reuse
+and redistribute as freely as possible in any form whatsoever and for any
+purposes, including without limitation commercial purposes. These owners may
+contribute to the Commons to promote the ideal of a free culture and the
+further production of creative, cultural and scientific works, or to gain
+reputation or greater distribution for their Work in part through the use and
+efforts of others.
+
+For these and/or other purposes and motivations, and without any expectation
+of additional consideration or compensation, the person associating CC0 with a
+Work (the "Affirmer"), to the extent that he or she is an owner of Copyright
+and Related Rights in the Work, voluntarily elects to apply CC0 to the Work
+and publicly distribute the Work under its terms, with knowledge of his or her
+Copyright and Related Rights in the Work and the meaning and intended legal
+effect of CC0 on those rights.
+
+1. Copyright and Related Rights. A Work made available under CC0 may be
+protected by copyright and related or neighboring rights ("Copyright and
+Related Rights"). Copyright and Related Rights include, but are not limited
+to, the following:
+
+  i. the right to reproduce, adapt, distribute, perform, display, communicate,
+  and translate a Work;
+
+  ii. moral rights retained by the original author(s) and/or performer(s);
+
+  iii. publicity and privacy rights pertaining to a person's image or likeness
+  depicted in a Work;
+
+  iv. rights protecting against unfair competition in regards to a Work,
+  subject to the limitations in paragraph 4(a), below;
+
+  v. rights protecting the extraction, dissemination, use and reuse of data in
+  a Work;
+
+  vi. database rights (such as those arising under Directive 96/9/EC of the
+  European Parliament and of the Council of 11 March 1996 on the legal
+  protection of databases, and under any national implementation thereof,
+  including any amended or successor version of such directive); and
+
+  vii. other similar, equivalent or corresponding rights throughout the world
+  based on applicable law or treaty, and any national implementations thereof.
+
+2. Waiver. To the greatest extent permitted by, but not in contravention of,
+applicable law, Affirmer hereby overtly, fully, permanently, irrevocably and
+unconditionally waives, abandons, and surrenders all of Affirmer's Copyright
+and Related Rights and associated claims and causes of action, whether now
+known or unknown (including existing as well as future claims and causes of
+action), in the Work (i) in all territories worldwide, (ii) for the maximum
+duration provided by applicable law or treaty (including future time
+extensions), (iii) in any current or future medium and for any number of
+copies, and (iv) for any purpose whatsoever, including without limitation
+commercial, advertising or promotional purposes (the "Waiver"). Affirmer makes
+the Waiver for the benefit of each member of the public at large and to the
+detriment of Affirmer's heirs and successors, fully intending that such Waiver
+shall not be subject to revocation, rescission, cancellation, termination, or
+any other legal or equitable action to disrupt the quiet enjoyment of the Work
+by the public as contemplated by Affirmer's express Statement of Purpose.
+
+3. Public License Fallback. Should any part of the Waiver for any reason be
+judged legally invalid or ineffective under applicable law, then the Waiver
+shall be preserved to the maximum extent permitted taking into account
+Affirmer's express Statement of Purpose. In addition, to the extent the Waiver
+is so judged Affirmer hereby grants to each affected person a royalty-free,
+non transferable, non sublicensable, non exclusive, irrevocable and
+unconditional license to exercise Affirmer's Copyright and Related Rights in
+the Work (i) in all territories worldwide, (ii) for the maximum duration
+provided by applicable law or treaty (including future time extensions), (iii)
+in any current or future medium and for any number of copies, and (iv) for any
+purpose whatsoever, including without limitation commercial, advertising or
+promotional purposes (the "License"). The License shall be deemed effective as
+of the date CC0 was applied by Affirmer to the Work. Should any part of the
+License for any reason be judged legally invalid or ineffective under
+applicable law, such partial invalidity or ineffectiveness shall not
+invalidate the remainder of the License, and in such case Affirmer hereby
+affirms that he or she will not (i) exercise any of his or her remaining
+Copyright and Related Rights in the Work or (ii) assert any associated claims
+and causes of action with respect to the Work, in either case contrary to
+Affirmer's express Statement of Purpose.
+
+4. Limitations and Disclaimers.
+
+  a. No trademark or patent rights held by Affirmer are waived, abandoned,
+  surrendered, licensed or otherwise affected by this document.
+
+  b. Affirmer offers the Work as-is and makes no representations or warranties
+  of any kind concerning the Work, express, implied, statutory or otherwise,
+  including without limitation warranties of title, merchantability, fitness
+  for a particular purpose, non infringement, or the absence of latent or
+  other defects, accuracy, or the present or absence of errors, whether or not
+  discoverable, all to the greatest extent permissible under applicable law.
+
+  c. Affirmer disclaims responsibility for clearing rights of other persons
+  that may apply to the Work or any use thereof, including without limitation
+  any person's Copyright and Related Rights in the Work. Further, Affirmer
+  disclaims responsibility for obtaining any necessary consents, permissions
+  or other rights required for any use of the Work.
+
+  d. Affirmer understands and acknowledges that Creative Commons is not a
+  party to this document and has no duty or obligation with respect to this
+  CC0 or use of the Work.
+
+For more information, please see
+<http://creativecommons.org/publicdomain/zero/1.0/>
+<http://creativecommons.org/publicdomain/zero/1.0/>

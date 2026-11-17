@@ -1,0 +1,331 @@
+/* 내 마당. 도트(16px 타일·픽셀 포켓몬)는 정수배로만 키우고 image-rendering: pixelated 로 그린다.
+   색·글씨 크기·모양은 tokens.css 값만 쓴다. */
+
+/* 아이콘: app.css 에 icon-partner 가 생기면 그쪽이 이긴다(:where 는 특이도 0). */
+:where(.icon-partner) { --icon: url('../img/ui/profile.png'); }
+
+.yard-screen {
+  --yard-scale: 3;
+  --yard-tile: 48px;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--c-green);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  isolation: isolate;
+}
+.yard-ground {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.yard-decor, .yard-field, .yard-clouds { position: absolute; inset: 0; pointer-events: none; }
+.yard-field { z-index: 2; }
+.yard-clouds { z-index: 3; overflow: hidden; }
+.yard-safe {
+  position: absolute;
+  inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------- 바람: 흔들리는 데이지·풀, 날아가는 나뭇잎, 지나가는 구름 그림자 ---------- */
+.yard-daisy, .yard-tuft, .yard-leaf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+}
+.yard-daisy {
+  width: var(--yard-tile);
+  height: var(--yard-tile);
+  background-image: url('../img/yard/plant.png');
+  background-size: calc(var(--yard-tile) * 4) var(--yard-tile);
+  animation: yard-daisy-sway .9s steps(4) infinite;
+}
+@keyframes yard-daisy-sway { to { background-position: calc(var(--yard-tile) * -4) 0; } }
+.yard-tuft {
+  width: var(--yard-tile);
+  height: var(--yard-tile);
+  background-image: url('../img/yard/tileset-floor-detail.png');
+  /* 풀 포기 한 칸(원본 48,32) */
+  background-size: calc(var(--yard-scale) * 256px) calc(var(--yard-scale) * 80px);
+  background-position: calc(var(--yard-scale) * -48px) calc(var(--yard-scale) * -32px);
+}
+.yard-tuft { transform-origin: 50% 100%; animation: yard-tuft-sway 2.6s ease-in-out infinite alternate; }
+/* 자리는 translate 속성으로 잡고, 바람은 skew 로만 준다(도트 가로줄이 그대로 남아 rotate 보다 계단이 덜 보인다). */
+@keyframes yard-tuft-sway {
+  from { transform: skewX(-10deg); }
+  to { transform: skewX(8deg); }
+}
+.yard-leaf {
+  left: -40px;
+  width: calc(var(--yard-scale) * 12px);
+  height: calc(var(--yard-scale) * 7px);
+  background-image: url('../img/yard/leaf.png');
+  background-size: calc(var(--yard-scale) * 72px) calc(var(--yard-scale) * 7px);
+  animation: yard-leaf-fly 13s linear infinite, yard-leaf-spin .6s steps(6) infinite;
+}
+.yard-leaf.pink { background-image: url('../img/yard/leaf-pink.png'); }
+@keyframes yard-leaf-fly {
+  0% { translate: 0 0; opacity: 0; }
+  6% { opacity: 1; }
+  25% { translate: 30vw 22px; }
+  50% { translate: 60vw -10px; }
+  75% { translate: 90vw 26px; }
+  94% { opacity: 1; }
+  100% { translate: calc(100vw + 80px) 0; opacity: 0; }
+}
+@keyframes yard-leaf-spin { to { background-position: calc(var(--yard-scale) * -72px) 0; } }
+
+.yard-clouds i {
+  position: absolute;
+  left: 0;
+  display: block;
+  width: calc(var(--yard-scale) * 80px * 2);
+  height: calc(var(--yard-scale) * 36px * 2);
+  background: url('../img/yard/clouds.png') 0 0 / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  filter: brightness(0);
+  opacity: .1;
+  animation: yard-cloud-drift 46s linear infinite;
+}
+.yard-clouds i:nth-child(1) { top: 18%; animation-delay: -12s; }
+.yard-clouds i:nth-child(2) { top: 58%; animation-duration: 63s; animation-delay: -40s; }
+@keyframes yard-cloud-drift {
+  from { translate: calc(100vw + 20px) 0; }
+  to { translate: calc(-100% - 20px) 0; }
+}
+
+/* ---------- 포켓몬 ---------- */
+.yard-pokemon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.yard-pokemon:focus-visible { outline: 3px solid var(--c-blue); outline-offset: 2px; border-radius: var(--r-s); }
+.yard-sprite {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;
+}
+.yard-pokemon.is-fallback .yard-sprite { image-rendering: auto; }
+.yard-shadow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-scrim);
+  opacity: .5;
+}
+.yard-shadow.is-popping { animation: yard-shadow-in .8s ease-out backwards; }
+/* 그림자 자리는 인라인 transform 이라 애니메이션은 scale 속성만 쓴다. */
+@keyframes yard-shadow-in { from { scale: 0; opacity: 0; } }
+.yard-sprite.is-popping { animation: yard-pop 1.24s cubic-bezier(.2, 1.6, .4, 1) backwards; }
+@keyframes yard-pop {
+  0% { transform: translateY(-40px) scale(0); }
+  55% { transform: translateY(-14px) scale(1.12, .9); }
+  80% { transform: translateY(0) scale(.94, 1.06); }
+  100% { transform: none; }
+}
+.yard-sprite.is-hopping { animation: yard-hop .5s ease-out; }
+@keyframes yard-hop {
+  0% { transform: none; }
+  20% { transform: scale(1.1, .88); }
+  50% { transform: translateY(-22px) scale(.94, 1.08); }
+  80% { transform: translateY(0) scale(1.08, .92); }
+  100% { transform: none; }
+}
+.yard-sprite.is-leaving { animation: yard-leave .34s ease-in forwards; }
+@keyframes yard-leave { to { transform: translateY(-16px) scale(0); opacity: 0; } }
+.yard-shadow.is-leaving { animation: yard-shadow-out .34s ease-in forwards; }
+@keyframes yard-shadow-out { to { scale: 0; opacity: 0; } }
+
+/* 머리 위 도트 감정 말풍선(하트·별·느낌표·물음표) */
+.yard-emote {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: calc(var(--yard-scale) * 14px);
+  height: calc(var(--yard-scale) * 13px);
+  max-width: none;
+  margin-left: calc(var(--yard-scale) * -7px);
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: yard-emote-rise 1.25s ease-out forwards;
+}
+@keyframes yard-emote-rise {
+  0% { transform: translateY(8px) scale(.4); opacity: 0; }
+  20% { transform: translateY(0) scale(1.1); opacity: 1; }
+  35% { transform: scale(1); }
+  80% { opacity: 1; }
+  100% { transform: translateY(-14px); opacity: 0; }
+}
+/* 이름 말풍선 */
+.yard-name {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--yard-scale) * 14px);
+  translate: -50% 0;
+  padding: 0 2px;
+  color: var(--c-surface);
+  font-size: var(--fs-m);
+  font-weight: var(--fw-heavy);
+  line-height: 1.3;
+  text-shadow: var(--text-outline);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: yard-name-pop .25s ease-out;
+}
+@keyframes yard-name-pop { from { transform: scale(.6); opacity: 0; } }
+
+/* ---------- 멘트·빈 마당·모서리 버튼 ---------- */
+.yard-line {
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--safe-top) + var(--touch) + var(--gap-m));
+  left: 0;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--gap-l) - var(--safe-left) - var(--safe-right));
+  padding: 0 var(--gap-m);
+  /* 필드 말풍선과 같은 도트 말풍선 판(img/yard/theme-bubble-panel.png)을 마당 도트 배율로 9칸 늘이기 */
+  border-style: solid;
+  border-width: calc(var(--yard-scale) * 4px) calc(var(--yard-scale) * 4px) calc(var(--yard-scale) * 5px);
+  border-image: url('../img/yard/theme-bubble-panel.png') 4 4 5 fill stretch;
+  image-rendering: pixelated;
+  color: var(--c-ink);
+  font-size: var(--fs-m);
+  font-weight: var(--fw-bold);
+  line-height: 1.3;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+}
+/* 꼬리: 필드 말풍선과 같은 8×5도트 꼬리(img/yard/bubble-tail.png)를 판 아랫변 가운데에 같은 배율로(윗줄 1도트는 판 외곽선과 겹침) */
+.yard-line::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - var(--yard-scale) * 4px);
+  top: calc(100% + var(--yard-scale) * 4px);
+  width: calc(var(--yard-scale) * 8px);
+  height: calc(var(--yard-scale) * 5px);
+  background: url('../img/yard/bubble-tail.png') 0 0 / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.yard-line.visible { opacity: 1; transform: none; }
+.yard-line:empty { display: none; }
+
+.yard-empty {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  justify-items: center;
+  gap: var(--gap-m);
+  width: min(calc(100% - 2 * var(--gap-l)), 420px);
+  padding: var(--gap-l);
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  box-shadow: var(--press-strong);
+  text-align: center;
+  translate: -50% -50%;
+}
+.yard-empty[hidden] { display: none; }
+.yard-empty p { font-size: var(--fs-l); font-weight: var(--fw-bold); word-break: keep-all; }
+
+.yard-party-button {
+  position: absolute;
+  z-index: 6;
+  right: calc(var(--safe-right) + var(--gap-m));
+  bottom: calc(var(--safe-bottom) + var(--gap-m));
+  min-width: calc(var(--touch) + var(--gap-s));
+  height: calc(var(--touch) + var(--gap-s));
+}
+.yard-party-button .ui-icon { width: 32px; height: 32px; }
+.yard-party-button[hidden] { display: none; }
+.yard-party-button.is-calling { animation: yard-call 1.2s ease-in-out infinite; }
+@keyframes yard-call { 50% { transform: translateY(-6px); } }
+
+/* ---------- 고르기 창 ---------- */
+.yard-picker-title { display: inline-flex; align-items: center; gap: var(--gap-s); }
+.yard-picker-title img { width: 32px; height: 32px; }
+.yard-count { font-size: var(--fs-xl); font-weight: var(--fw-bold); }
+.yard-count.full { color: var(--c-primary-press); }
+/* 「모두 빼기」: 목록 위 오른쪽에 두어 친구가 많아도 스크롤 없이 보인다. */
+.yard-picker-tools { display: flex; justify-content: flex-end; margin-bottom: var(--gap-s); }
+.yard-picker-tools .button { gap: 6px; }
+.yard-picker-tools .button:disabled { opacity: .5; box-shadow: none; }
+.yard-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: var(--gap-s);
+}
+.yard-choice {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-height: 64px;
+  padding: var(--gap-s);
+  border: var(--border);
+  border-radius: var(--r-m);
+  background: var(--c-paper);
+  box-shadow: var(--press);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.yard-choice:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.yard-choice img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.yard-choice.active { background: var(--c-right-bg); }
+.yard-choice.locked { background: var(--c-disabled); box-shadow: none; }
+.yard-choice.locked img { opacity: .45; }
+.yard-choice-mark {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: none;
+  width: 26px;
+  height: 26px;
+  border: var(--border);
+  border-radius: 50%;
+  background: var(--c-green) url('../img/ui/check.png') center / 16px no-repeat;
+}
+.yard-choice.active .yard-choice-mark { display: block; }
+.is-shaking { animation: yard-shake .4s ease; }
+@keyframes yard-shake {
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ---------- 모션 줄이기: 반복 움직임을 끄고 포켓몬은 제자리에 선다 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .yard-screen *, .yard-picker * { animation: none !important; transition: none !important; }
+  .yard-leaf, .yard-clouds { display: none; }
+}

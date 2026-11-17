@@ -1,0 +1,229 @@
+/* ---------- 튜토리얼 카드(js/tutorial.js) ----------
+   처음 화면과 같은 들판 배경·구름(app.css .title-backdrop·.title-cloud), 통통 뛰는 큰 피카츄, 글 두 줄 카드, 큰 「다음」 하나.
+   세로: 위에서부터 피카츄 · 카드 · 버튼. 가로: 왼쪽 피카츄, 오른쪽 카드·버튼. 색·글씨·모양은 tokens.css 값만 쓴다. */
+.tutorial-screen { position: relative; min-height: 100vh; min-height: 100dvh; overflow: hidden; isolation: isolate; }
+/* 설정 왼쪽의 보조 동작. 첫 배틀에서도 같은 자리를 쓴다. */
+.tutorial-skip { position: fixed; z-index: 60; top: calc(var(--safe-top) + var(--gap-s)); right: calc(var(--safe-right) + var(--touch) + var(--gap-s) * 2); min-height: var(--touch); font-size: var(--fs-s); }
+.tutorial-skip[hidden] { display: none; }
+.tutorial-layout {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 560px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: minmax(140px, 1fr) auto auto;
+  grid-template-areas: "pikachu" "card" "next";
+  justify-items: center;
+  gap: var(--gap-l);
+  padding: calc(var(--safe-top) + var(--touch) + var(--gap-m)) calc(var(--safe-right) + var(--gap-l)) calc(var(--safe-bottom) + var(--gap-l)) calc(var(--safe-left) + var(--gap-l));
+}
+.tutorial-pikachu { grid-area: pikachu; position: relative; align-self: end; width: 100%; min-width: 0; height: 100%; max-height: 360px; }
+.tutorial-pikachu img {
+  display: block;
+  height: 100%;
+  width: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center bottom;
+  transform-origin: 50% 100%;
+  animation: pokemon-hop 1.8s ease-in-out infinite;
+  cursor: pointer;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+/* 발밑 그림자(타이틀 포켓몬과 같은 모양) */
+.tutorial-pikachu::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 12%;
+  bottom: -4%;
+  width: 76%;
+  height: 12%;
+  background: radial-gradient(closest-side, var(--c-scrim), transparent);
+  animation: shadow-hop 1.8s ease-in-out infinite;
+}
+/* 같이 다닐 친구 카드(Tutorial.renderParty): 잡은 셋을 피카츄 자리에 나란히, 차례로 통통 뛴다. */
+.tutorial-trio { grid-area: pikachu; align-self: end; display: flex; align-items: flex-end; justify-content: center; gap: var(--gap-s); width: 100%; height: 100%; max-height: 340px; }
+.tutorial-trio img {
+  /* 칸 사이 틈 없이 크게(2026-11-13: 태블릿에서 작아 보임). 카드·버튼과는 겹치지 않는다. */
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 100%;
+  transform-origin: 50% 100%;
+  animation: pokemon-hop 1.8s ease-in-out infinite;
+  animation-delay: calc(var(--hop) * .3s);
+  cursor: pointer;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.tutorial-card {
+  grid-area: card;
+  display: grid;
+  justify-items: center;
+  gap: var(--gap-s);
+  width: 100%;
+  padding: var(--gap-m) var(--gap-l);
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  text-align: center;
+}
+.tutorial-art { --icon-size: 48px; display: flex; line-height: 0; }
+.tutorial-art img { width: var(--icon-size); height: var(--icon-size); object-fit: contain; }
+.tutorial-title { font-size: var(--fs-xl); font-weight: var(--fw-heavy); line-height: 1.25; white-space: pre-line; }
+.tutorial-text { font-size: var(--fs-l); font-weight: var(--fw-bold); color: var(--c-ink-soft); }
+/* 카드 3장(data-step)은 「다음」에서 글만 바뀐다(js/tutorial.js mount). 제목이 한 줄·두 줄로 바뀌어도 대화 상자 높이가 같아야
+   피카츄·버튼이 들썩이지 않는다 → 그림 칸 높이를 고정하고 제목·글 칸을 두 줄 높이(줄 높이 1.25·1.4 × 2)로 잡아 가운데에 둔다. */
+.tutorial-screen[data-step] .tutorial-art { height: var(--icon-size); }
+.tutorial-screen[data-step] .tutorial-title { min-height: 2.5em; display: grid; align-items: center; }
+.tutorial-screen[data-step] .tutorial-text { min-height: 2.8em; display: grid; align-items: center; }
+.tutorial-next {
+  grid-area: next;
+  width: min(100%, 360px);
+  min-height: calc(var(--touch) + var(--gap-m));
+  font-size: var(--fs-xl);
+  box-shadow: var(--press-strong);
+}
+.tutorial-next .ui-icon { --icon-size: 36px; }
+/* 난이도 올리기 카드: 버튼 둘을 위아래로(주 버튼 위, 보조 아래). 글자만 있는 버튼이라 아이콘 칸이 없다. */
+.tutorial-actions { grid-area: next; display: grid; justify-items: center; gap: var(--gap-s); width: min(100%, 360px); justify-self: center; }
+.tutorial-actions .tutorial-next { grid-area: auto; width: 100%; }
+.tutorial-actions .tutorial-next.is-secondary { min-height: var(--touch); font-size: var(--fs-l); box-shadow: var(--press); }
+.tutorial-next:active { box-shadow: var(--press-down); }
+
+/* 몸통 가운데를 기준으로 투명 여백을 맞춘 그림을 칸 안에 전부 넣는다. 꼬리도 화면 안에 둔다. */
+@media (orientation: portrait) {
+  .tutorial-pikachu::after { left: 25%; width: 50%; }
+}
+/* 세로 폰: 화면 높이를 꼭 맞춰(넘치지 않게) 남는 높이만 피카츄가 쓴다. 키 작은 폰(360×640·393×695)에서
+   피카츄 그림 높이만큼 칸이 늘어나 「다음」 버튼이 화면 아래로 밀려 잘리던 것(2026-11-13 모바일 점검). */
+@media (orientation: portrait) and (max-width: 720px) {
+  .tutorial-layout { height: 100vh; height: 100dvh; grid-template-rows: minmax(0, 1fr) auto auto; }
+  .tutorial-pikachu, .tutorial-trio { min-height: 0; }
+}
+@media (orientation: portrait) and (max-height: 720px) {
+  .tutorial-layout { gap: var(--gap-m); padding-top: calc(var(--safe-top) + var(--touch) + var(--gap-s)); }
+  .tutorial-card { gap: 4px; padding: var(--gap-s) var(--gap-m); }
+  .tutorial-art { --icon-size: 40px; }
+}
+/* 가로 화면: 왼쪽 피카츄, 오른쪽 카드와 버튼 */
+@media (orientation: landscape) {
+  .tutorial-layout {
+    max-width: 1000px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+    grid-template-areas: "pikachu ." "pikachu card" "pikachu next" "pikachu .";
+    column-gap: var(--gap-l);
+    row-gap: var(--gap-m);
+  }
+  .tutorial-pikachu { align-self: center; height: min(62vh, 420px); height: min(62dvh, 420px); }
+  .tutorial-trio { align-self: center; height: min(52vh, 400px); height: min(52dvh, 400px); max-height: none; }
+}
+/* 짧은 가로 폰(667×375 등): 위쪽 여백·그림·카드를 줄여 한 화면에 담는다. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .tutorial-layout { padding-top: calc(var(--safe-top) + var(--touch) + var(--gap-s)); padding-bottom: calc(var(--safe-bottom) + var(--gap-m)); row-gap: var(--gap-s); }
+  .tutorial-pikachu { height: 64vh; height: 64dvh; }
+  .tutorial-trio { height: 50vh; height: 50dvh; }
+  .tutorial-card { gap: 4px; padding: var(--gap-s) var(--gap-m); }
+  .tutorial-art { --icon-size: 36px; }
+  .tutorial-next { min-height: var(--touch); }
+}
+/* 키 360px 이하 가로(사파리 가로 734×343, 2026-11-14): 카드 글씨를 한 단계씩 줄이고 위·아래 빈 줄 사이 간격을 없애 「다음」·「지금이 좋아」가
+   홈 막대 위에 온전히 보인다(전에는 페이지가 17~21px 넘쳐 스크롤되고 버튼 아래 끝이 홈 막대에 닿았다). */
+@media (orientation: landscape) and (max-height: 360px) {
+  .tutorial-layout { row-gap: 0; padding-bottom: calc(var(--safe-bottom) + var(--gap-s)); }
+  .tutorial-layout > .tutorial-next, .tutorial-layout > .tutorial-actions { margin-top: var(--gap-s); }
+  .tutorial-art { --icon-size: 30px; }
+  .tutorial-title { font-size: var(--fs-l); }
+  .tutorial-text { font-size: var(--fs-m); }
+  .tutorial-actions { gap: 6px; }
+  .tutorial-actions .tutorial-next.is-secondary { min-height: 44px; }
+}
+/* 큰 가로 화면(1366×1024·1440×900·1920×1080): 1000px 안에 카드·버튼·피카츄가 작게 모여 있었다 → 폭과 피카츄·버튼을 키운다(2026-11-13). */
+@media (orientation: landscape) and (min-width: 1300px) and (min-height: 850px) {
+  .tutorial-layout { max-width: 1300px; }
+  .tutorial-pikachu { max-height: none; height: min(62vh, 560px); height: min(62dvh, 560px); }
+  .tutorial-trio { height: min(52vh, 520px); height: min(52dvh, 520px); }
+  .tutorial-card { padding: var(--gap-l); }
+  .tutorial-next { width: min(100%, 420px); min-height: calc(var(--touch) + var(--gap-l)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-pikachu img, .tutorial-pikachu::after, .tutorial-trio img { animation: none !important; }
+}
+
+/* ---------- 캐릭터 고르기(Tutorial.renderPick, 셋째 카드 뒤·숲 배틀 전) ----------
+   같은 들판 배경 위에 한 줄 제목, 남자·여자 앞모습을 크게 나란히 두고 그림을 누르면 고른다(글보다 그림이 중심, 2026-11-14). */
+.tutorial-pick {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  justify-items: center;
+  gap: var(--gap-l);
+  padding: calc(var(--safe-top) + var(--touch) + var(--gap-m)) calc(var(--safe-right) + var(--gap-l)) calc(var(--safe-bottom) + var(--gap-l)) calc(var(--safe-left) + var(--gap-l));
+}
+.tutorial-pick-title {
+  padding: var(--gap-s) var(--gap-l);
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-heavy);
+  line-height: 1.25;
+  text-align: center;
+  word-break: keep-all;
+  text-wrap: balance;
+}
+/* 넓은 가로 화면에서 두 캐릭터가 양 끝으로 멀어지지 않게 폭을 묶는다. */
+.tutorial-looks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-m); width: min(100%, 640px); min-height: 0; }
+.tutorial-look {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  gap: var(--gap-s);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.tutorial-look img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  object-position: 50% 100%;
+  transition: transform .12s ease;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.tutorial-look:active img { transform: scale(.96); }
+.tutorial-look span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  min-height: var(--touch);
+  padding: 0 var(--gap-l);
+  border: var(--border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  font-size: var(--fs-l);
+  font-weight: var(--fw-heavy);
+}
+/* 짧은 가로 폰: 위 여백과 사이를 줄여 그림을 조금이라도 크게. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .tutorial-pick { gap: var(--gap-s); padding-top: calc(var(--safe-top) + var(--gap-s)); padding-bottom: calc(var(--safe-bottom) + var(--gap-m)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-look img { transition: none; }
+}

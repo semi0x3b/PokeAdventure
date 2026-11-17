@@ -1,0 +1,977 @@
+/* 배틀을 뺀 화면들이 함께 쓰는 스타일. tokens.css 다음에 읽는다.
+   이 파일 위쪽은 공통 부품(바탕·아이콘·버튼·고르기 버튼·상단 모서리 버튼·알림·창·로그인·설정)과 타이틀·출석·선물·지역 선택이다.
+   필드·도감·글자 쓰기 화면은 각자 css 파일을 갖는다. 색·글씨 크기(6단계)·모서리·테두리·그림자는 tokens.css 변수만 쓴다.
+   움직임은 transform·opacity 만 쓰고, 모션 줄이기에서는 반복 움직임을 끈다. */
+
+/* ---------- 바탕 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--font);
+  font-size: var(--fs-m);
+  line-height: 1.4;
+  color: var(--c-ink);
+  background: var(--c-sky);
+  overflow-x: hidden;
+  word-break: keep-all;
+  -webkit-tap-highlight-color: transparent;
+}
+body.modal-open { overflow: hidden; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+h1, h2, h3, p { margin: 0; }
+small { font-size: var(--fs-s); }
+img { max-width: 100%; }
+main { display: block; min-height: 100vh; min-height: 100dvh; outline: none; }
+:focus-visible { outline: 3px solid var(--c-blue); outline-offset: 3px; }
+.silhouette { filter: brightness(0); }
+noscript { display: block; padding: var(--gap-l); font-size: var(--fs-l); }
+
+/* ---------- 공통 아이콘 ----------
+   쓰는 법: <span class="ui-icon icon-NAME" aria-hidden="true"></span>. 크기는 부모나 자신에게 --icon-size 를 준다(기본 28px).
+   그림은 Codex 가 이 게임용으로 그린 색 아이콘(img/art/icons/NAME.png)을 그대로 그린다.
+   색 그림이 없는 이름(도감 상세의 작은 표시 등)은 각 화면 CSS 에서 .ui-icon--mono 처럼 mask 로 글씨색을 칠한다. */
+.ui-icon {
+  display: inline-block;
+  flex: none;
+  width: var(--icon-size, 28px);
+  height: var(--icon-size, 28px);
+  background: var(--icon) center / contain no-repeat;
+  -webkit-mask: none;
+  mask: none;
+}
+.icon-home { --icon: url('../img/art/icons/home.png'); }
+.icon-back { --icon: url('../img/art/icons/back.png'); }
+.icon-close { --icon: url('../img/art/icons/close.png'); }
+.icon-settings { --icon: url('../img/art/icons/settings.png'); }
+.icon-sound-on { --icon: url('../img/art/icons/sound-on.png'); }
+.icon-sound-off { --icon: url('../img/art/icons/sound-off.png'); }
+.icon-music-on { --icon: url('../img/art/icons/music-on.png'); }
+.icon-music-off { --icon: url('../img/art/icons/music-off.png'); }
+.icon-dex { --icon: url('../img/art/icons/dex.png'); }
+.icon-map { --icon: url('../img/art/icons/map.png'); }
+.icon-pencil { --icon: url('../img/art/icons/pencil.png'); }
+.icon-eraser { --icon: url('../img/art/icons/eraser.png'); }
+.icon-done { --icon: url('../img/art/icons/done.png'); }
+.icon-retry { --icon: url('../img/art/icons/retry.png'); }
+.icon-play { --icon: url('../img/art/icons/play.png'); }
+.icon-gift { --icon: url('../img/art/icons/gift.png'); }
+.icon-stamp { --icon: url('../img/art/icons/stamp.png'); }
+.icon-star { --icon: url('../img/art/icons/star.png'); }
+.icon-lock { --icon: url('../img/art/icons/lock.png'); }
+.icon-unlock { --icon: url('../img/art/icons/unlock.png'); }
+.icon-partner { --icon: url('../img/art/icons/partner.png'); }
+/* 설정: 서버 저장이 안 될 때만 뜨는 한 줄(평소에는 없음). */
+.setting-warning { display: flex; align-items: center; gap: var(--gap-s); margin: 0 0 var(--gap-s); color: var(--c-primary-press); font-size: var(--fs-m); font-weight: var(--fw-heavy); }
+.icon-bag { --icon: url('../img/art/icons/bag.png'); }
+.icon-trainer { --icon: url('../img/art/icons/trainer.png'); }
+:root[data-trainer-look="girl"] .icon-trainer { --icon: url('../img/art/icons/trainer-girl.png'); }
+/* 고른 캐릭터(settings.trainerLook → <html data-trainer-look>, game.js applyTrainerLook): 전투 뒷모습(battle-view.css .gb-trainer)과 설정의 작은 앞모습 두 개. */
+:root { --trainer-back: url('../img/art/trainer-back-boy.webp'); }
+:root[data-trainer-look="girl"] { --trainer-back: url('../img/art/trainer-back-girl.webp'); }
+.toggle-group .setting-look { padding-left: 6px; }
+.setting-look img { height: 40px; width: auto; }
+.icon-read-aloud { --icon: url('../img/art/icons/read-aloud.png'); }
+.icon-hint { --icon: url('../img/art/icons/hint.png'); }
+.icon-math { --icon: url('../img/art/icons/math.png'); }
+.icon-korean { --icon: url('../img/art/icons/korean.png'); }
+.icon-english { --icon: url('../img/art/icons/english.png'); }
+.icon-creative { --icon: url('../img/art/icons/creative.png'); }
+.icon-yard { --icon: url('../img/art/icons/yard.png'); }
+.ball-mark { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -.2em; background: url('../img/art/balls/ball-red-small.png') center / contain no-repeat; }
+
+/* ---------- 버튼: 알약 모양, 남색 테두리, 아래로 깔린 그림자. 누르면 내려앉는다. ---------- */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-s);
+  min-height: var(--touch);
+  padding: 0 var(--gap-l);
+  border: var(--border);
+  border-radius: var(--r-pill);
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: var(--fs-l);
+  font-weight: var(--fw-heavy);
+  line-height: 1.2;
+  box-shadow: var(--press);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.button:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.button.secondary { background: var(--c-surface); color: var(--c-ink); }
+.button.small { padding: 0 var(--gap-m); font-size: var(--fs-m); }
+.button.full { width: 100%; }
+/* 빨간 버튼 위의 빨간 재생 그림은 속이 빈 것처럼 보여 흰색으로 칠한다(배틀 버튼 포함). */
+.button:not(.secondary):not(:disabled) .icon-play, .gb-button:not(.is-secondary) .icon-play { filter: brightness(0) invert(1); }
+.button:disabled { background: var(--c-disabled); color: var(--c-disabled-ink); box-shadow: var(--press-down); transform: translateY(3px); cursor: default; }
+
+/* 켜기/끄기·단계처럼 여럿 중 하나를 고르는 버튼 묶음 */
+.toggle-group { display: flex; flex-wrap: wrap; gap: var(--gap-s); }
+.toggle-group button {
+  --icon-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--touch);
+  min-width: var(--touch);
+  padding: 0 var(--gap-m);
+  border: var(--border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  color: var(--c-ink);
+  font-size: var(--fs-m);
+  font-weight: var(--fw-bold);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.toggle-group button:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.toggle-group button.active { background: var(--c-blue); color: var(--c-on-primary); }
+
+/* ---------- 상단 모서리 버튼: 아이콘(필드 「도감」·「가방」·도감 「지도」만 아이콘 + 짧은 글자 알약) ---------- */
+.topbar {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: calc(var(--safe-top) + var(--gap-s)) calc(var(--safe-right) + var(--gap-s)) 0 calc(var(--safe-left) + var(--gap-s));
+  pointer-events: none;
+}
+.topbar > *, .top-actions > * { pointer-events: auto; }
+.top-actions { display: flex; gap: var(--gap-s); pointer-events: none; }
+.corner-button {
+  --icon-size: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: var(--border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  color: var(--c-ink);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.corner-button:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.home-button .ui-icon { --icon-size: 34px; }
+/* 도감·지도·가방도 같은 크기의 원형 아이콘이다. 예약 폭은 제목·필드 이름의 여백 계산에 쓴다. */
+:root { --corner-pill: var(--touch); }
+.corner-pill { width: var(--corner-pill); padding: 0; }
+.corner-pill .ui-icon { --icon-size: 28px; }
+body[data-screen="title"] .home-button { visibility: hidden; }
+body:not([data-screen="field"]) .dex-button { display: none; }
+body:not([data-screen="dex"]) .topbar .map-button { display: none; }
+body[data-screen="battle"] .topbar { display: none; }
+/* 필드도 도감·가방·설정을 한 줄에 둔다. 다른 화면처럼 설정은 맨 오른쪽이다. */
+body[data-screen="field"] .top-actions--end { display: flex; flex-wrap: nowrap; }
+body:not([data-screen="field"]) .bag-button, .bag-button[hidden] { display: none; }
+
+/* 화면 위쪽 가운데 제목: 양쪽 모서리 버튼 사이에 놓는다. */
+.screen-title, .dex-header, .wordbook-header {
+  min-height: var(--touch);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-s) var(--gap-m);
+  padding: 0 calc(var(--touch) + var(--gap-s));
+  text-align: center;
+}
+.screen-title, .dex-header h2, .wordbook-header h2 { font-size: var(--fs-xl); font-weight: var(--fw-heavy); }
+
+/* 모서리 버튼 아래부터 시작하는 일반 화면 틀 */
+.region-screen, .dex-screen, .wordbook {
+  width: 100%;
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + var(--gap-s)) calc(var(--safe-right) + var(--gap-l)) calc(var(--safe-bottom) + var(--gap-l)) calc(var(--safe-left) + var(--gap-l));
+}
+
+/* 화면에 들어올 때 요소가 아래에서 차례로 톡톡 올라온다(.is-entering 이 붙은 화면만, 다시 그릴 때는 안 함). */
+/* 채움은 backwards 만: 끝난 뒤에는 원래 스타일(누름 반응 등)로 돌아간다. 2026-11-13 「2배 느리게」로 1초씩, 140ms 간격. */
+.is-entering .pop { animation: pop-in 1s cubic-bezier(.3, 1.35, .5, 1) backwards; animation-delay: calc(320ms + var(--order, 0) * 140ms); }
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(22px) scale(.9); }
+  65% { opacity: 1; transform: translateY(-3px) scale(1.02); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 알림 ---------- */
+#toast {
+  position: fixed;
+  z-index: 1200;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + var(--gap-l));
+  width: max-content;
+  max-width: min(calc(100% - 2 * var(--gap-l)), 520px);
+  /* 아래 알림도 상자 없이 흰 글씨 + 남색 테두리(배틀 멘트와 같은 모양). 상자가 도감 칸 테두리와 붙어 이상해 보이던 것(2026-11-13 사용자). */
+  padding: 0;
+  color: var(--c-surface);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-heavy);
+  text-align: center;
+  text-shadow: var(--text-outline);
+  opacity: 0;
+  transform: translate(-50%, 16px) scale(.9);
+  transition: opacity .2s ease, transform .25s cubic-bezier(.3, 1.4, .5, 1);
+  pointer-events: none;
+}
+#toast.visible { opacity: 1; transform: translate(-50%, 0); }
+/* 알림 글씨 뒤에 화면 폭의 어두운 그림자 띠를 깐다(위아래·양끝은 흐리게 사라져 상자처럼 보이지 않는다). 지역 카드 글자 같은 아래 글씨와 겹쳐도
+   알림이 먼저 읽힌다(2026-11-13 Aside QA). 같은 그림자를 두 겹 깔아 가운데를 더 어둡게 한다. */
+#toast::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: calc(var(--gap-m) * -1);
+  bottom: calc(var(--gap-m) * -1);
+  left: 50%;
+  width: 100vw;
+  translate: -50% 0;
+  background: linear-gradient(transparent, var(--c-scrim) 30%, var(--c-scrim) 70%, transparent), linear-gradient(transparent, var(--c-scrim) 30%, var(--c-scrim) 70%, transparent);
+  -webkit-mask: linear-gradient(90deg, transparent, var(--c-ink) 22%, var(--c-ink) 78%, transparent);
+  mask: linear-gradient(90deg, transparent, var(--c-ink) 22%, var(--c-ink) 78%, transparent);
+  pointer-events: none;
+}
+
+/* ---------- 창(로그인·설정·출처·도장판·도감·파트너) ---------- */
+.modal-backdrop {
+  position: fixed;
+  z-index: 300;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--safe-top) + var(--gap-m)) calc(var(--safe-right) + var(--gap-m)) calc(var(--safe-bottom) + var(--gap-m)) calc(var(--safe-left) + var(--gap-m));
+  background: var(--c-scrim);
+  animation: fade-in .4s ease both;
+}
+.modal {
+  width: min(100%, 560px);
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--gap-l);
+  border: var(--border-strong);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-2);
+  animation: modal-pop .64s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+/* 같은 창을 다시 그릴 때(설정 바꾸기 등)는 통통 튀지 않는다. */
+.modal-backdrop.is-replacing, .is-replacing .modal { animation: none; }
+/* 저절로 뜬 도장판이 스스로 닫힐 때 스르르(game.js title). */
+.modal-backdrop.is-leaving { animation: modal-leave .35s ease both; }
+@keyframes modal-leave { to { opacity: 0; } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes modal-pop { from { opacity: 0; transform: scale(.72); } }
+.modal--wide { width: min(100%, 820px); }
+.modal--form { width: min(100%, 460px); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-m); margin-bottom: var(--gap-m); }
+/* 긴 창(도감 상세·설정)을 내려도 제목과 닫기 버튼이 위에 붙어 있다(2026-11-13 Aside QA). 창의 안쪽 여백만큼 위로 올려 덮는다. */
+.modal-header { position: sticky; top: calc(var(--gap-l) * -1); z-index: 3; margin: calc(var(--gap-l) * -1) calc(var(--gap-l) * -1) var(--gap-m); padding: var(--gap-l) var(--gap-l) var(--gap-s); background: var(--c-surface); }
+.modal-header h2 { font-size: var(--fs-xl); font-weight: var(--fw-heavy); line-height: 1.2; }
+.close-button {
+  --icon-size: 24px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: var(--border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  color: var(--c-ink);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.close-button:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.modal-actions { display: flex; justify-content: center; margin-top: var(--gap-l); }
+
+/* 로그인: 이름은 키보드, 비밀번호 4자리는 화면 숫자판으로 누른다. */
+.login-tabs { margin-bottom: 6px; }
+.login-tabs button { flex: 1; padding: 0 var(--gap-s); white-space: nowrap; }
+.auth-form { display: grid; gap: var(--gap-s); }
+.form-field { display: grid; gap: 6px; font-size: var(--fs-m); font-weight: var(--fw-bold); }
+.form-field input {
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 var(--gap-m);
+  border: var(--border);
+  border-radius: var(--r-m);
+  background: var(--c-paper);
+  font-size: var(--fs-l);
+  font-weight: var(--fw-bold);
+}
+.form-field input:focus { outline: none; border-color: var(--c-blue); }
+.form-field input::placeholder { color: var(--c-disabled-ink); }
+.pin-field { position: relative; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+/* 실제 비밀번호 칸: 보이지 않지만 키보드·화면 읽기·자동 입력은 그대로 쓴다. 휴대폰 키보드는 띄우지 않는다(inputmode="none"). */
+.pin-field .pin-input { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; overflow: hidden; }
+.pin-dots { display: flex; gap: var(--gap-s); padding: 6px var(--gap-s); border-radius: var(--r-pill); }
+.pin-field:focus-within .pin-dots { outline: 3px solid var(--c-blue); }
+.pin-dots i { display: block; width: 22px; height: 22px; border: var(--border); border-radius: var(--r-pill); background: var(--c-surface); transition: transform .12s ease; }
+.pin-dots i.on { background: var(--c-blue); transform: scale(1.1); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-s); }
+.pin-pad button {
+  --icon-size: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch);
+  border: var(--border);
+  border-radius: var(--r-m);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  color: var(--c-ink);
+  font-size: var(--fs-l);
+  font-weight: var(--fw-heavy);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.pin-pad button:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.pin-pad .pin-zero { grid-column: span 2; }
+.pin-pad .pin-erase { background: var(--c-paper); }
+.form-help { font-size: var(--fs-s); color: var(--c-ink-soft); }
+.form-error { font-size: var(--fs-m); font-weight: var(--fw-bold); color: var(--c-bad); }
+.form-error:empty { display: none; }
+/* 처음부터 다시 하기 확인 창(game.js resetModal): 로그인 창과 같은 비밀번호 칸(숫자 키보드)·버튼. 지울 것·남는 것 한 줄과 「되돌릴 수 없어요」.
+   버튼은 위아래로 쌓고(주 버튼이 위), 키 낮은 가로 폰에서만 나란히. */
+.reset-form { display: grid; gap: var(--gap-s); }
+.reset-note { font-size: var(--fs-m); font-weight: var(--fw-bold); line-height: 1.45; }
+.reset-warning { font-size: var(--fs-m); font-weight: var(--fw-heavy); color: var(--c-primary-press); }
+.reset-form .pin-field { cursor: pointer; }
+.reset-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap-s); margin-top: var(--gap-s); }
+@media (orientation: landscape) and (max-height: 520px) {
+  .reset-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* 설정 */
+.setting-row { display: grid; gap: var(--gap-s); padding: var(--gap-m) 0; border-top: 2px solid var(--c-line); }
+.setting-row:first-child { border-top: 0; padding-top: 0; }
+.setting-row h3 { font-size: var(--fs-m); font-weight: var(--fw-heavy); }
+.setting-note { font-size: var(--fs-s); color: var(--c-ink-soft); }
+.setting-footer { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+.setting-footer .button { --icon-size: 24px; min-width: 50%; }
+/* 가로 화면: 설정 창을 넓히고 항목을 두 열로 놓아 덜 내려도 되게 한다. 제목과 계정·출처 줄은 두 열을 가로지른다. */
+@media (orientation: landscape) {
+  .modal--settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--gap-l); align-items: start; width: min(100%, 760px); }
+  .modal--settings > .modal-header, .modal--settings > .setting-footer { grid-column: 1 / -1; }
+  /* 바닥줄: 계정 버튼(로그인·로그아웃·처음부터 다시 하기)은 왼쪽에 붙이고 소개 다시 보기·출처는 오른쪽 끝에. 좁으면 다음 줄로 넘어간다. */
+  .modal--settings > .setting-footer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-s); }
+  .modal--settings > .setting-footer > .setting-warning { flex-basis: 100%; }
+  .modal--settings > .setting-footer > :is([data-action=logout], [data-action=account], [data-action=reset-open]) + .button:not([data-action=reset-open]) { margin-left: auto; }
+  .modal--settings > .setting-footer .button { min-width: 0; }
+}
+.asset-credits { display: grid; gap: var(--gap-s); font-size: var(--fs-s); color: var(--c-ink-soft); line-height: 1.6; }
+.asset-credits a { color: var(--c-blue-press); }
+
+/* ---------- 타이틀 ---------- */
+.title-scene { position: relative; min-height: 100vh; min-height: 100dvh; overflow: hidden; isolation: isolate; }
+.title-backdrop { position: absolute; inset: 0; z-index: -1; background: url('../img/art/title-meadow.png') center 70% / cover no-repeat; }
+.title-scene > .ambient-world { z-index: 0; }
+/* 하늘을 천천히 가로지르는 구름(분위기 그림의 구름 칸) */
+.title-cloud {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: var(--top);
+  width: var(--width);
+  aspect-ratio: 2;
+  background: url('../img/art/ambient-atlas.png') 100% 0 / 200% 200% no-repeat;
+  opacity: .9;
+  pointer-events: none;
+  animation: cloud-drift var(--speed) linear infinite;
+  animation-delay: var(--start);
+  will-change: transform;
+}
+.title-cloud--one { --top: 3%; --width: clamp(140px, 26vw, 320px); --speed: 46s; --start: -14s; }
+.title-cloud--two { --top: 15%; --width: clamp(100px, 18vw, 220px); --speed: 64s; --start: -41s; opacity: .75; }
+@keyframes cloud-drift { from { transform: translateX(-110%); } to { transform: translateX(100vw); } }
+.title-layout {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 560px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(130px, 1fr) auto auto;
+  grid-template-areas: "heading" "party" "menu" "stamps";
+  gap: var(--gap-m);
+  padding: calc(var(--safe-top) + var(--touch) + var(--gap-s)) calc(var(--safe-right) + var(--gap-l)) calc(var(--safe-bottom) + var(--gap-l)) calc(var(--safe-left) + var(--gap-l));
+}
+.title-heading { grid-area: heading; position: relative; display: grid; justify-items: center; gap: var(--gap-s); }
+.title-heading h1 { width: 100%; line-height: 0; }
+.title-logo {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  max-height: 22vh;
+  max-height: 22dvh;
+  margin: 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 10px var(--c-scrim));
+}
+/* 로고 옆에서 살랑살랑 떠 있는 몬스터볼 */
+.title-trainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.25;
+  text-align: center;
+  max-width: 100%;
+  /* 로고와 떨어지게 조금 아래로(2026-11-13 사용자). */
+  margin: var(--gap-l) 0 0;
+  color: var(--c-surface);
+  text-shadow: var(--text-outline);
+}
+.title-trainer strong { font-size: var(--fs-xl); font-weight: var(--fw-heavy); overflow-wrap: anywhere; }
+.title-trainer span { font-size: var(--fs-l); font-weight: var(--fw-heavy); white-space: nowrap; }
+
+/* 네 마리가 같은 땅 위에 서서 박자를 어긋나게 통통 뛴다. 발밑 그림자도 같이 작아졌다 커진다.
+   뒤 줄은 작게·높게, 앞 줄은 크게·낮게. 자리 잡기는 translate, 움직임은 transform 으로 나눠 서로 덮지 않는다. */
+.title-party { grid-area: party; position: relative; min-height: 130px; }
+.title-pokemon {
+  position: absolute;
+  left: var(--x);
+  bottom: var(--ground);
+  height: var(--size);
+  translate: -50% 0;
+  z-index: var(--depth);
+}
+.title-pokemon::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 9%;
+  bottom: -5%;
+  width: 82%;
+  height: 16%;
+  background: radial-gradient(closest-side, var(--c-scrim), transparent);
+}
+/* 처음 화면 포켓몬은 가만히 서 있다가, 마우스를 대거나 누를 때만 한 번 통 점프한다(2026-11-13 사용자). 누르기는 game.js 가 is-hopping 을 붙인다. */
+.title-pokemon:hover img, .title-pokemon.is-hopping img { animation: pokemon-hop 1.2s ease-in-out 1; }
+.title-pokemon:hover::after, .title-pokemon.is-hopping::after { animation: shadow-hop 1.2s ease-in-out 1; }
+.title-pokemon img {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  /* 작은 화면에서 홀쭉한 포켓몬도 손가락으로 누르기 쉽게(그림은 가운데 그대로). */
+  min-width: 44px;
+  min-height: 44px;
+  object-fit: contain;
+  transform-origin: 50% 100%;
+  cursor: pointer;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+@keyframes pokemon-hop {
+  0%, 62%, 100% { transform: translateY(0) scale(1, 1); }
+  14% { transform: translateY(0) scale(1.04, .94); }
+  36% { transform: translateY(-13%) scale(.98, 1.03); }
+  56% { transform: translateY(0) scale(1.03, .96); }
+}
+@keyframes shadow-hop { 0%, 62%, 100% { transform: scale(1); opacity: 1; } 36% { transform: scale(.7); opacity: .55; } }
+/* 단체 사진처럼 앞줄(피카츄·이상해씨)과 뒷줄(꼬부기·파이리). 줄마다 같은 높이·크기, 뒷줄은 앞줄보다 조금 더 벌려 서서 어깨 위로 얼굴이 보인다.
+   두 마리씩 양쪽으로 갈라져 보이지 않게 가운데로 모은다(2026-11-14 사용자 「여긴 애들이 떨어져있네」). */
+.title-pokemon--squirtle { --x: 33%; --ground: 26%; --size: 50%; --depth: 1; --delay: -.2s; }
+.title-pokemon--charmander { --x: 68%; --ground: 26%; --size: 50%; --depth: 1; --delay: -1.1s; }
+.title-pokemon--pikachu { --x: 26%; --ground: 0%; --size: 56%; --depth: 2; --delay: -.6s; pointer-events: none; }
+/* 몸통 정렬용 왼쪽 투명 여백이 옆 메뉴의 누르기를 가로채지 않게 한다. 그림 픽셀은 31%부터 있다. */
+.title-pokemon--pikachu img { pointer-events: auto; clip-path: inset(0 0 0 30%); }
+.title-pokemon--bulbasaur { --x: 63%; --ground: 0%; --size: 52%; --depth: 2; --delay: -1.5s; }
+
+/* 메뉴: 「모험 시작」이 가장 크고, 나머지는 색이 다른 작은 카드(아이콘이 먼저, 더 크게). */
+.title-menu { grid-area: menu; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-s); }
+.menu-card { flex-direction: column; gap: 2px; width: 100%; min-height: calc(var(--touch) * 1.5); padding: 6px 4px; font-size: var(--fs-m); white-space: nowrap; }
+.menu-card .ui-icon { --icon-size: 40px; }
+/* 숨쉬기는 버튼 상자 대신 아이콘과 바깥 빛 테두리가 한다(버튼 자리는 그대로라 누르기 쉽다). */
+.menu-card--start { position: relative; grid-column: 1 / -1; flex-direction: row; gap: var(--gap-m); min-height: calc(var(--touch) + var(--gap-m)); font-size: var(--fs-xl); box-shadow: var(--press-strong); }
+.menu-card--start .ui-icon { --icon-size: 44px; animation: breathe 1.6s ease-in-out infinite; }
+.menu-card--start::after { content: ""; position: absolute; inset: -7px; border: 3px solid var(--c-primary); border-radius: var(--r-pill); pointer-events: none; animation: halo 2.4s ease-out infinite; }
+@keyframes halo { from { transform: scale(.97); opacity: .8; } to { transform: scale(1.06); opacity: 0; } }
+.menu-card--start:active { box-shadow: var(--press-down); }
+.menu-card--dex { background: var(--c-blue); }
+.menu-card--words { background: var(--c-green); }
+.menu-card--yard { background: var(--c-purple); }
+@keyframes breathe { 50% { scale: 1.08; } }
+
+/* 출석 요약 카드 하나: 글 없이 작은 배지 칸(모은 것은 색)과 늘 보이는 선물 상자 */
+.stamp-card {
+  grid-area: stamps;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-m);
+  width: 100%;
+  min-height: calc(var(--touch) + var(--gap-m));
+  padding: 4px var(--gap-m);
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  box-shadow: var(--press);
+  text-align: left;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.stamp-card:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.stamp-card-badges { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
+/* 배지·선물 사이 점선: 남는 자리를 똑같이 나눠 가져서 선물까지 같은 간격이 된다. */
+.stamp-card-dots { flex: 1 1 0; min-width: 6px; height: 0; border-top: 4px dotted var(--c-ink-soft); opacity: .45; }
+.stamp-card-badges img { flex: 0 1 44px; width: 44px; min-width: 0; height: 44px; object-fit: contain; }
+.stamp-card-gift { position: relative; flex: none; display: grid; justify-items: center; font-size: var(--fs-s); font-weight: var(--fw-bold); color: var(--c-ink-soft); }
+.stamp-card-gift img { width: 52px; height: 46px; object-fit: contain; }
+.stamp-card.ready { background: var(--c-gold); }
+.stamp-card.ready .stamp-card-gift { color: var(--c-gold-ink); }
+.stamp-card.ready .stamp-card-gift img { animation: breathe 1.6s ease-in-out infinite; }
+.stamp-card.ready .stamp-card-gift::before { content: ""; position: absolute; inset: -6px; border: 3px solid var(--c-surface); border-radius: var(--r-pill); animation: glow-pulse 1.4s ease-out infinite; }
+/* 빛 테두리가 맥박처럼 번진다 */
+@keyframes glow-pulse { from { transform: scale(.85); opacity: .95; } to { transform: scale(1.3); opacity: 0; } }
+/* 아직 안 찍힌 배지를 옛 그림으로 대신할 때만 흐리게 한다(새 회색 배지 그림이 오면 그대로 쓴다). */
+img.badge-dim { filter: grayscale(1); opacity: .3; }
+
+/* ---------- 큰 출석 도장판 ---------- */
+.stamp-board { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.stamp-badges { list-style: none; width: 100%; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr)); gap: var(--gap-m) var(--gap-s); }
+.stamp-badge { position: relative; display: grid; justify-items: center; gap: 2px; font-size: var(--fs-s); font-weight: var(--fw-bold); color: var(--c-ink-soft); }
+.stamp-badge img { position: relative; z-index: 1; width: 100%; max-width: 96px; aspect-ratio: 1; object-fit: contain; }
+.stamp-badge.collected { color: var(--c-ink); }
+.stamp-badge.today span { color: var(--c-primary-press); }
+.stamp-badge.today::before, .stamp-badge.gift.ready::before { content: ""; position: absolute; z-index: 0; top: 0; left: 50%; width: min(100%, 96px); aspect-ratio: 1; translate: -50% 0; border: 4px solid var(--c-gold); border-radius: var(--r-pill); animation: glow-pulse 1.5s ease-out infinite; }
+.stamp-badge.gift:not(.ready) img { filter: grayscale(.6); opacity: .6; }
+/* 오늘 도장: 크게 돌며 날아와 쾅 찍힌다(1.4초, 55% 인 0.77초에 쾅 — game.js stampsModal 소리 시각). 찍히는 순간 금빛 고리가 퍼진다. */
+.stamp-badge.stamping img { animation: stamp-slam 1.4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.stamp-badge.stamping::after { content: ""; position: absolute; z-index: 2; top: 0; left: 50%; width: min(100%, 96px); aspect-ratio: 1; translate: -50% 0; border: 5px solid var(--c-gold); border-radius: var(--r-pill); box-shadow: 0 0 14px var(--c-gold); opacity: 0; pointer-events: none; animation: stamp-ring .8s ease-out .74s both; }
+@keyframes stamp-ring { from { opacity: 1; transform: scale(.6); } to { opacity: 0; transform: scale(1.7); } }
+@keyframes stamp-slam {
+  from { opacity: 0; transform: scale(2.8) rotate(-28deg); }
+  55% { opacity: 1; transform: scale(.88) rotate(5deg); }
+  to { opacity: 1; transform: none; }
+}
+.stamp-gift-open {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 2px 0 4px;
+  border: var(--border);
+  border-radius: var(--r-m);
+  background: var(--c-gold);
+  box-shadow: var(--press);
+  color: var(--c-gold-ink);
+  font-size: var(--fs-m);
+  font-weight: var(--fw-heavy);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.stamp-gift-open:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.stamp-gift-open img { animation: breathe 1.4s ease-in-out infinite; }
+
+/* ---------- 출석 선물 연출 ---------- */
+.gift-scene {
+  position: fixed;
+  z-index: 900;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-m);
+  padding: calc(var(--safe-top) + var(--gap-l)) var(--gap-l) calc(var(--safe-bottom) + var(--gap-l));
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, var(--c-surface) 0, var(--c-paper) 30%, var(--c-gold) 110%);
+}
+.gift-rays {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 170vmax;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(var(--c-glass) 0 9deg, transparent 9deg 22deg);
+  opacity: .8;
+  animation: gift-rays 14s linear infinite;
+}
+@keyframes gift-rays { to { rotate: 1turn; } }
+.gift-scene .gift-chest-closed, .gift-scene .gift-chest-open {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 54%;
+  width: min(46vmin, 310px);
+  height: min(46vmin, 310px);
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  transition: opacity .56s ease, transform .8s ease;
+  pointer-events: none;
+}
+.gift-scene .gift-chest-closed { animation: gift-expect .8s ease-in-out both; }
+.gift-scene .gift-chest-open { opacity: 0; }
+.gift-scene.opening .gift-chest-closed { opacity: 0; transform: translate(-50%, -50%) scale(.94); }
+.gift-scene.opening .gift-chest-open { opacity: 1; }
+.gift-ball {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 41%;
+  /* 상자에서 튀어나오는 몬스터볼: 상자(46vmin)와 비슷하게 크게(2026-11-13 사용자 「너무 작아」, 예전 23vmin·130px). */
+  width: min(36vmin, 240px);
+  height: min(36vmin, 240px);
+  transform: translate(-50%, -50%);
+  background: url('../img/art/balls/ball-red.png') center / contain no-repeat;
+  opacity: 0;
+}
+.gift-scene[data-gift-beat^="shake"] .gift-ball { opacity: 1; animation: gift-ball 1.1s ease-in-out 4; }
+@keyframes gift-expect { 0%, 100% { transform: translate(-50%, -50%) rotate(0); } 30% { transform: translate(-50%, -50%) rotate(-4deg); } 70% { transform: translate(-50%, -50%) rotate(4deg); } }
+@keyframes gift-ball { 0%, 100% { transform: translate(-50%, -50%) rotate(0); } 25% { transform: translate(-50%, -50%) rotate(-16deg); } 75% { transform: translate(-50%, -50%) rotate(16deg); } }
+.gift-pokemon, .gift-message, .gift-scene > .button { display: none; position: relative; z-index: 4; }
+.gift-scene.revealed .gift-ball { display: none; }
+.gift-scene.revealed .gift-chest-open { top: 62%; opacity: .24; transform: translate(-50%, -25%) scale(.78); }
+.gift-scene.revealed .gift-pokemon { display: block; width: min(52vmin, 340px); aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 12px 6px var(--c-scrim)); animation: gift-pop 1s cubic-bezier(.3, 1.6, .5, 1); }
+.gift-scene.revealed .gift-message {
+  display: block;
+  max-width: min(90vw, 700px);
+  padding: var(--gap-s) var(--gap-l);
+  border: var(--border);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-heavy);
+  text-align: center;
+  animation: pop-in .9s cubic-bezier(.3, 1.35, .5, 1) .3s both;
+}
+.gift-scene.revealed > .button { display: inline-flex; min-width: 50%; animation: pop-in .9s cubic-bezier(.3, 1.35, .5, 1) .6s both; }
+/* 짜잔 순간 포켓몬 자리에서 금빛 고리가 퍼진다. */
+.gift-scene::after { content: ""; position: absolute; z-index: 3; left: 50%; top: 42%; width: min(52vmin, 340px); aspect-ratio: 1; translate: -50% -50%; border: 6px solid var(--c-surface); border-radius: var(--r-pill); box-shadow: 0 0 0 4px var(--c-gold), 0 0 30px var(--c-gold); opacity: 0; pointer-events: none; }
+.gift-scene.revealed::after { animation: gift-burst 1.1s ease-out both; }
+@keyframes gift-burst { from { opacity: 1; transform: scale(.3); } to { opacity: 0; transform: scale(2.4); } }
+@keyframes gift-pop { from { transform: scale(.15) rotate(-12deg); opacity: 0; } }
+
+/* ---------- 지역 선택: 장소 그림 카드 자체를 누른다 ---------- */
+.region-screen { max-width: 1200px; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; gap: var(--gap-m); }
+.regions { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(160px, 1fr); gap: var(--gap-m); padding-bottom: 6px; }
+.region-card {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  min-height: 160px;
+  padding: 0;
+  border: var(--border-strong);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  box-shadow: var(--press-strong);
+  color: var(--c-on-primary);
+  text-align: left;
+  isolation: isolate;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.region-card:active { transform: translateY(4px); box-shadow: var(--press-down); }
+/* 고른 카드는 살짝 커졌다 들어간다 */
+.region-card.is-picked { animation: card-pick .56s ease-out; }
+@keyframes card-pick { 50% { scale: 1.06; } }
+.region-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+.region-pokemon { position: absolute; left: 50%; bottom: 34%; height: 38%; max-height: 170px; translate: -50% 0; }
+.region-pokemon img { display: block; height: 100%; width: auto; max-width: none; animation: float 1.8s ease-in-out infinite alternate; animation-delay: var(--float-delay, 0s); }
+/* 피카츄는 몸통 가운데를 맞춘 투명 여백까지 카드 안에 넣어 긴 꼬리를 자르지 않는다. */
+.region-pokemon:has(img[src$="/25.webp"]) { width: calc(100% - var(--gap-m) * 2); }
+.region-pokemon:has(img[src$="/25.webp"]) img { width: 100%; height: 100%; object-fit: contain; }
+.region-pokemon::after { content: ""; position: absolute; z-index: -1; left: 8%; bottom: -6%; width: 84%; height: 16%; background: radial-gradient(closest-side, var(--c-scrim), transparent); animation: float-shadow 1.8s ease-in-out infinite alternate; animation-delay: var(--float-delay, 0s); }
+@keyframes float { to { transform: translateY(-8%); } }
+@keyframes float-shadow { to { transform: scale(.8); opacity: .6; } }
+.region-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  gap: 2px;
+  padding: var(--gap-l) var(--gap-m) var(--gap-m);
+  background: linear-gradient(transparent, var(--c-scrim) 55%);
+  text-shadow: 0 2px 6px var(--c-scrim);
+}
+.region-label strong { font-size: var(--fs-xl); font-weight: var(--fw-heavy); line-height: 1.15; }
+.region-label span { font-size: var(--fs-m); font-weight: var(--fw-bold); }
+
+/* ---------- 타이틀·지역·창의 화면 크기별 배치 ---------- */
+/* 작은 세로 폰(360×640 등) */
+@media (orientation: portrait) and (max-height: 720px) {
+  .title-layout { gap: var(--gap-s); }
+  .title-logo { max-height: 15vh; max-height: 15dvh; }
+  .title-layout { grid-template-rows: auto minmax(100px, 1fr) auto auto; }
+  .title-party { min-height: 100px; }
+  .menu-card { min-height: calc(var(--touch) + var(--gap-s)); }
+  .menu-card .ui-icon { --icon-size: 30px; }
+  .menu-card--start { min-height: var(--touch); }
+  .stamp-card { min-height: var(--touch); padding: 0 var(--gap-m); }
+  .stamp-card-badges img, .stamp-card-gift img { width: 34px; height: 34px; }
+  /* 로그인 창이 한 화면에 들어오도록 부모 안내 한 줄을 뺀다. */
+  .modal-header { margin-bottom: var(--gap-s); }
+  .modal--form .form-help { display: none; }
+}
+@media (orientation: portrait) and (max-width: 480px) {
+  .screen-title { font-size: var(--fs-l); }
+}
+/* 가로 화면: 왼쪽에 로고·메뉴·출석, 오른쪽 넓은 땅에 포켓몬 */
+@media (orientation: landscape) {
+  .title-layout {
+    max-width: 1180px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-rows: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+    grid-template-areas: ". party" "heading party" "menu party" "stamps party" ". party";
+    column-gap: var(--gap-l);
+    align-content: center;
+    padding-top: calc(var(--safe-top) + var(--gap-l));
+  }
+  .title-logo { max-height: 30vh; max-height: 30dvh; }
+  .title-party { min-height: 0; }
+  .title-pokemon--squirtle { --x: 33%; --ground: 26%; --size: 42%; }
+  .title-pokemon--charmander { --x: 71%; --ground: 26%; --size: 42%; }
+  .title-pokemon--pikachu { --x: 26%; --ground: 2%; --size: 48%; }
+  .title-pokemon--bulbasaur { --x: 65%; --ground: 2%; --size: 44%; }
+  .regions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .region-pokemon { bottom: 30%; height: 34%; }
+}
+/* 넓은 가로 화면(태블릿·컴퓨터): 땅이 넓어 포켓몬이 너무 커지지 않게 줄이고, 앞줄을 바닥에서 띄운다. 줄 간격은 앞뒤 같게. */
+@media (orientation: landscape) and (min-height: 600px) {
+  .title-pokemon--squirtle { --x: 33%; --ground: 31%; --size: 37%; }
+  .title-pokemon--charmander { --x: 67%; --ground: 31%; --size: 37%; }
+  .title-pokemon--pikachu { --x: 26%; --ground: 9%; --size: 43%; }
+  .title-pokemon--bulbasaur { --x: 62%; --ground: 9%; --size: 39%; }
+}
+/* 짧은 가로 폰(667×375, 844×390): 메뉴 넷을 한 줄로, 도장판은 한 줄로, 로그인은 숫자판을 오른쪽에 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .title-layout { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); row-gap: var(--gap-s); padding-top: calc(var(--safe-top) + var(--gap-s)); padding-bottom: calc(var(--safe-bottom) + var(--gap-m)); }
+  .title-logo { max-height: 32vh; max-height: 32dvh; }
+  /* 로그인해서 이름 칸이 생기면 로고를 조금 줄여 한 화면에 담는다. */
+  .title-heading:has(.title-trainer) .title-logo { max-height: 24vh; max-height: 24dvh; }
+  .title-trainer { margin-top: var(--gap-s); padding: 0 var(--gap-m); }
+  .title-menu { grid-template-columns: minmax(0, 1.35fr) repeat(3, minmax(0, 1fr)); }
+  .menu-card { min-height: calc(var(--touch) + var(--gap-m)); padding: 2px; font-size: var(--fs-s); }
+  .menu-card .ui-icon { --icon-size: 28px; }
+  .menu-card--start { grid-column: auto; flex-direction: column; gap: 0; font-size: var(--fs-m); }
+  .menu-card--start .ui-icon { --icon-size: 30px; }
+  .stamp-card { min-height: var(--touch); padding: 0 var(--gap-m); }
+  .stamp-card-badges img, .stamp-card-gift img { width: 34px; height: 34px; }
+  .modal { padding: var(--gap-m); }
+  .modal-header { margin-bottom: var(--gap-s); }
+  .login-tabs { margin-bottom: 0; }
+  .auth-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: dense; column-gap: var(--gap-m); }
+  .auth-form > :not(.pin-pad) { grid-column: 1; }
+  .auth-form > .pin-pad { grid-column: 2; grid-row: 1 / span 5; align-self: start; }
+  .modal--form { width: min(100%, 640px); }
+  .modal--form .form-help { display: none; }
+  .stamp-badges { grid-template-columns: repeat(var(--cells, 6), minmax(0, 1fr)); }
+  .stamp-badge img { max-width: 64px; }
+  .stamp-badge.today::before, .stamp-badge.gift.ready::before { width: min(100%, 64px); }
+  .regions { grid-auto-rows: minmax(0, 1fr); }
+  .region-card { min-height: 0; }
+  .region-label { padding: var(--gap-m) var(--gap-s) var(--gap-s); }
+}
+/* 모션 줄이기: 반복 움직임과 등장 움직임을 끄고 결과만 보여 준다. */
+@media (prefers-reduced-motion: reduce) {
+  .is-entering .pop, .modal, .modal-backdrop, .title-cloud, .title-pokemon img, .title-pokemon::after,
+  .menu-card--start .ui-icon, .menu-card--start::after, .stamp-card.ready .stamp-card-gift img, .stamp-card.ready .stamp-card-gift::before,
+  .stamp-badge.today::before, .stamp-badge.gift.ready::before, .stamp-badge.stamping img, .stamp-badge.stamping::after, .stamp-gift-open img,
+  .gift-rays, .gift-scene .gift-chest-closed, .gift-scene .gift-ball, .gift-scene.revealed .gift-pokemon, .gift-scene.revealed::after,
+  .gift-scene.revealed .gift-message, .gift-scene.revealed > .button, .region-card.is-picked,
+  .region-pokemon img, .region-pokemon::after, .ambient-accent {
+    animation: none !important;
+  }
+  .gift-scene .gift-chest-closed, .gift-scene .gift-chest-open, #toast { transition: none; }
+}
+
+
+/* ---------- 지역 분위기(필드·타이틀·배틀 배경 위 잎·구름·물결) ---------- */
+.ambient-world { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; contain: layout paint; }
+.ambient-accent { position: absolute; display: block; width: clamp(230px, 34vw, 540px); aspect-ratio: 2; background: url('../img/art/ambient-atlas.png') var(--ambient-position) / 200% 200% no-repeat; pointer-events: none; transform-origin: 10% 20%; will-change: transform; }
+.ambient-accent--one { left: -9%; top: -7%; opacity: .7; animation: ambient-leaves 9s ease-in-out infinite alternate; }
+.ambient-accent--two { right: -14%; top: -5%; opacity: .52; transform-origin: 90% 10%; animation: ambient-leaves-other 11s ease-in-out -5s infinite alternate; }
+.ambient--city .ambient-accent { width: 44%; top: 3%; opacity: .23; animation: ambient-cloud 20s ease-in-out infinite alternate; }
+.ambient--city .ambient-accent--two { top: 23%; right: -18%; opacity: .16; animation-delay: -12s; }
+.ambient--desert .ambient-accent { width: 42%; top: auto; bottom: 13%; opacity: .26; animation: ambient-sand 12s ease-in-out infinite alternate; }
+.ambient--desert .ambient-accent--two { bottom: 42%; right: 3%; opacity: .18; animation-delay: -7s; }
+.ambient--sea .ambient-accent { width: 52%; left: auto; right: -13%; top: auto; bottom: -8%; opacity: .5; animation: ambient-wave 6s ease-in-out infinite alternate; }
+.ambient--sea .ambient-accent--two { right: -22%; bottom: 27%; width: 35%; opacity: .28; animation-delay: -3s; }
+.modal-open .ambient-accent { animation-play-state: paused; }
+@keyframes ambient-leaves { from { transform: rotate(-2deg) translate(0, 0); } to { transform: rotate(2deg) translate(8px, 4px); } }
+@keyframes ambient-leaves-other { from { transform: scaleX(-1) rotate(1deg); } to { transform: scaleX(-1) rotate(-2deg) translate(-5px, 3px); } }
+@keyframes ambient-cloud { from { transform: translateX(-20px); } to { transform: translateX(30px); } }
+@keyframes ambient-sand { from { transform: translate(-15px, 5px); opacity: .13; } to { transform: translate(25px, -4px); opacity: .3; } }
+@keyframes ambient-wave { from { transform: translate(8px, 8px) rotate(-1deg); } to { transform: translate(-8px, -3px) rotate(1deg); } }
+
+/* ---------- 화면 크기별 ---------- */
+/* 작은 세로 폰(360×640 등): 간격을 줄인다. */
+@media (orientation: portrait) and (max-height: 720px) {
+  .title-layout { gap: var(--gap-s); }
+  .title-logo { max-height: 19vh; max-height: 19dvh; }
+}
+
+/* 짧은 가로 폰: 도장판 창·지역·글자 쓰기. 타이틀·로그인 배치는 위 블록 한 곳에서 정한다. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .stamp-badges { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .stamp-badge img { max-width: 64px; }
+  .regions { grid-auto-rows: minmax(0, 1fr); }
+  .region-card { min-height: 0; }
+  .region-label { padding: var(--gap-m) var(--gap-s) var(--gap-s); }
+}
+
+/* ---------- 폰 세로 다듬기(2026-11-13 모바일 최적화). PC(가로)는 이 블록을 읽지 않는다. ---------- */
+@media (orientation: portrait) and (max-width: 720px) {
+  /* 설정: 창 여백을 줄이고, 켜기·끄기·쉬움·도전처럼 둘 중 하나인 줄은 제목 옆에 버튼을 둔다.
+     여럿 중 고르는 줄은 버튼 안 여백을 줄여 한 줄에 셋~넷씩 채운다(덜 내려가도 되게). */
+  .modal--settings { padding: var(--gap-m); }
+  /* 창 안쪽 여백을 줄였으니 위에 붙는 제목 줄(.modal-header 의 음수 여백)도 같은 값으로 맞춘다. */
+  .modal--settings > .modal-header { top: calc(var(--gap-m) * -1); margin: calc(var(--gap-m) * -1) calc(var(--gap-m) * -1) var(--gap-s); padding: var(--gap-m) var(--gap-m) var(--gap-s); }
+  .modal--settings .setting-row { padding: var(--gap-s) 0; }
+  .modal--settings .setting-row:has(> .toggle-group > :nth-child(2):last-child) { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--gap-m); }
+  .modal--settings .setting-row:has(> .toggle-group > :nth-child(2):last-child) > .setting-note { grid-column: 1 / -1; }
+  .modal--settings .toggle-group button { padding: 0 var(--gap-s); }
+  .modal--settings > .setting-footer { display: flex; flex-wrap: wrap; gap: var(--gap-s); }
+  .modal--settings > .setting-footer > .setting-warning { flex-basis: 100%; }
+  .modal--settings > .setting-footer .button { flex: 1 0 auto; min-width: 0; padding: 0 var(--gap-m); }
+  /* 선물 장면: 포켓몬을 화면 폭 가득 크게(세로는 vmin 이 폭이라 작아 보였다). */
+  .gift-scene.revealed .gift-pokemon { width: min(80vw, 42vh, 340px); width: min(80vw, 42dvh, 340px); }
+}
+/* 키 작은 세로 폰(360×640·393×695): 가장 큰 「모험 시작」은 손가락이 편한 56px 이상으로 둔다. */
+@media (orientation: portrait) and (max-height: 720px) {
+  .menu-card--start { min-height: calc(var(--touch) + var(--gap-s)); }
+}
+/* 폭 좁은 세로 폰(360)·작은 가로 폰(667): 지역 카드 「새 포켓몬 N마리」가 두 줄로 갈리지 않게 한 단계 작은 글씨. */
+@media (orientation: portrait) and (max-width: 380px), (orientation: landscape) and (max-height: 520px) and (max-width: 720px) {
+  .region-label span { font-size: var(--fs-s); }
+}
+
+/* ---------- 폰 가로 다듬기(667×375·844×390·932×430). 키가 520px 이하인 가로 화면만 — 태블릿·PC 는 읽지 않는다. ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+  /* 처음 화면: 왼쪽 칸을 넓혀 「모험 시작」을 한 줄 전체 큰 버튼으로, 도감·글자 쓰기·내 마당은 그 아래 세 칸(글씨 한 단계 크게).
+     트레이너 이름 칸은 한 단계 작은 글씨로 줄여 로고 크기를 지킨다. */
+  .title-layout { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+  .title-trainer { margin-top: 4px; }
+  .title-trainer strong { font-size: var(--fs-l); }
+  .title-trainer span { font-size: var(--fs-m); }
+  .title-menu { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .menu-card { min-height: calc(var(--touch) + var(--gap-s)); font-size: var(--fs-m); }
+  .menu-card .ui-icon { --icon-size: 30px; }
+  .menu-card--start { grid-column: 1 / -1; flex-direction: row; gap: var(--gap-s); min-height: calc(var(--touch) + 4px); font-size: var(--fs-l); }
+  .menu-card--start .ui-icon { --icon-size: 34px; }
+}
+/* 가장 낮은 가로 폰(667×375 등): 이름 칸이 있는 처음 화면이 11px 넘쳐 로고만 조금 줄인다. */
+@media (orientation: landscape) and (max-height: 400px) {
+  .title-heading:has(.title-trainer) .title-logo { max-height: 20vh; max-height: 20dvh; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* 가로 폰은 창 안쪽 여백이 --gap-m 이라(위 블록) 위에 붙는 제목 줄(.modal-header 음수 여백)도 같은 값으로 맞춘다. */
+  .modal-header { top: calc(var(--gap-m) * -1); margin: calc(var(--gap-m) * -1) calc(var(--gap-m) * -1) var(--gap-s); padding: var(--gap-m) var(--gap-m) var(--gap-s); }
+  /* 설정: 두 열은 그대로 두고, 둘 중 하나인 줄(켜기·끄기, 쉬움·도전)은 제목 옆에 버튼을 둔다.
+     높이가 비슷한 줄끼리 나란히 서도록 여러 개 고르는 줄(문제 종류·수 범위·단계)을 뒤로 모은다. */
+  .modal--settings { width: min(100%, 820px); }
+  .modal--settings .setting-row { padding: var(--gap-s) 0; }
+  .modal--settings .setting-row:has(> .toggle-group > :nth-child(2):last-child) { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--gap-m); }
+  .modal--settings .setting-row:has(> .toggle-group > :nth-child(2):last-child) > .setting-note { grid-column: 1 / -1; }
+  .modal--settings > .setting-row:has([data-area], [data-setting]) { order: 1; }
+  .modal--settings > .setting-footer { order: 2; }
+  .modal--settings .toggle-group button { padding: 0 var(--gap-s); }
+
+  /* 선물 장면: 위아래가 낮아 포켓몬이 작았다 → 왼쪽 반에 크게, 오른쪽에 한 줄과 버튼. 열린 상자·빛 고리도 포켓몬 쪽으로. */
+  .gift-scene { padding-left: calc(var(--safe-left) + var(--gap-l)); padding-right: calc(var(--safe-right) + var(--gap-l)); }
+  .gift-scene.revealed { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr); align-items: center; justify-items: center; column-gap: var(--gap-l); row-gap: var(--gap-m); }
+  .gift-scene.revealed .gift-pokemon { grid-column: 1; grid-row: 1 / -1; width: min(72vh, 44vw, 340px); width: min(72dvh, 44vw, 340px); }
+  .gift-scene.revealed .gift-message { grid-column: 2; grid-row: 2; }
+  .gift-scene.revealed > .button { grid-column: 2; grid-row: 3; min-width: 70%; }
+  .gift-scene .gift-chest-open { transition: opacity .56s ease, transform .8s ease, left .8s ease; }
+  .gift-scene.revealed .gift-chest-open, .gift-scene.revealed::after { left: 26%; }
+}
+
+/* ---------- 아이폰 가로(2026-11-14 사용자 「모바일은 가로버전은 지원 하지 않는건가? 패드에 비해 너무 uiux가 안좋네 나는 아이폰 15프로야」) ----------
+   기준: 사파리 가로 734×343(주소창·탭 막대를 뺀 크기, 아래 홈 막대 21px), 홈 화면에서 연 전체 화면 852×393(양옆 노치 59px·홈 막대 21px).
+   패드에서 좋은 배치는 그대로 두고 키(343~393px)에 맞게 줄이기만 한다. 키 520px 이하 가로 폰 전체:
+   - 처음 화면: 위·아래 빈 줄 사이의 줄 간격을 없애(위 블록 row-gap 이 빈 줄에도 붙어 16px 를 더 먹었다) 가운데로 모은다 — 852×393·844×390 에서 2~5px 넘쳐 스크롤되던 것.
+   - 창: 위아래 바깥 여백을 --gap-s 로(852×393 가입 창이 13px 스크롤되던 것), 가입 창 줄 사이를 6px 로. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .title-layout { row-gap: 0; }
+  .title-layout > .title-menu, .title-layout > .stamp-card { margin-top: var(--gap-s); }
+  .modal-backdrop { padding-top: calc(var(--safe-top) + var(--gap-s)); padding-bottom: calc(var(--safe-bottom) + var(--gap-s)); }
+  .auth-form { row-gap: 6px; }
+}
+/* 키 360px 이하(사파리 가로 734×343·작은 폰 사파리 가로 약 320px): 위 배치에서 한 번 더 줄인다. 누르는 곳은 44px 아래로 내리지 않는다.
+   - 처음 화면: 로그인하면 로고 21%·이름 두 줄을 촘촘히, 메뉴 칸 아이콘 24px — 「모험 시작」·출석 칸이 홈 막대 위에 다 보인다(전에는 42px 넘쳐 출석 칸이 홈 막대 밑).
+   - 창: 안쪽 위 여백을 --gap-s 로(붙는 제목 줄 음수 여백도 같은 값).
+   - 가입·로그인: 탭·이름 칸 44px, 「이름」은 칸 왼쪽 같은 줄, 숫자판 칸 46px — 「내 수첩 만들기」가 스크롤 없이 보인다(전에는 창을 내려야 보였다).
+   - 처음부터 다시 하기 확인 창: 줄 사이 6px(13px 스크롤되던 것). */
+@media (orientation: landscape) and (max-height: 360px) {
+  .title-layout { padding-bottom: calc(var(--safe-bottom) + var(--gap-s)); }
+  .title-heading { gap: 4px; }
+  .title-heading:has(.title-trainer) .title-logo { max-height: 21vh; max-height: 21dvh; }
+  .title-trainer { margin-top: 0; line-height: 1.15; }
+  .title-menu { gap: 6px; }
+  .menu-card { min-height: var(--touch); }
+  .menu-card .ui-icon { --icon-size: 24px; }
+  .menu-card--start { min-height: var(--touch); }
+  .menu-card--start .ui-icon { --icon-size: 30px; }
+
+  .modal { padding-top: var(--gap-s); }
+  .modal-header { top: calc(var(--gap-s) * -1); margin-top: calc(var(--gap-s) * -1); padding-top: var(--gap-s); padding-bottom: 4px; }
+  .login-tabs button { min-height: 44px; }
+  .auth-form > .form-field:not(.pin-field) { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--gap-s); }
+  .auth-form .form-field input { min-height: 44px; }
+  .pin-pad { gap: 6px; }
+  .pin-pad button { min-height: 46px; }
+  .reset-form { gap: 6px; }
+  .reset-actions { margin-top: 0; }
+}
+
+
+/* ---------- 태블릿·큰 화면 다듬기(2026-11-13). 폰(세로 폭 720 이하·가로 키 520 이하)은 이 블록을 읽지 않는다. ----------
+   세로 태블릿 = (portrait, 폭 721 이상), 큰 가로 화면 = (landscape, 폭 1300·키 850 이상: 1366×1024·1440×900·1920×1080).
+   1024×768·1280×800 처음 화면·지역 배치는 그대로 둔다(사용자: PC 80% 만족). */
+/* 세로 태블릿 처음 화면: 560px 기둥이 넓은 화면 가운데 작게 떠 있었다 → 기둥과 버튼·출석 칸을 한 단계씩 크게. */
+@media (orientation: portrait) and (min-width: 721px) {
+  .title-layout { max-width: 680px; }
+  .title-logo { max-width: 540px; }
+  .menu-card { min-height: calc(var(--touch) * 1.9); font-size: var(--fs-l); }
+  .menu-card .ui-icon { --icon-size: 52px; }
+  .menu-card--start { min-height: calc(var(--touch) * 1.5); font-size: var(--fs-xl); }
+  .menu-card--start .ui-icon { --icon-size: 52px; }
+  .stamp-card { min-height: calc(var(--touch) * 1.6); }
+  .stamp-card-badges img { flex-basis: 56px; width: 56px; height: 56px; }
+  .stamp-card-gift img { width: 64px; height: 56px; }
+}
+/* 큰 가로 화면 처음 화면·지역: 1180·1200px 안에 갇혀 양옆이 비고 버튼·포켓몬이 작았다 → 폭을 넓히고 메뉴·지역 포켓몬을 크게. */
+@media (orientation: landscape) and (min-width: 1300px) and (min-height: 850px) {
+  .title-layout { max-width: 1560px; }
+  .title-logo { max-width: 620px; }
+  .menu-card { min-height: calc(var(--touch) * 1.9); font-size: var(--fs-l); }
+  .menu-card .ui-icon { --icon-size: 52px; }
+  .menu-card--start { min-height: calc(var(--touch) * 1.5); font-size: var(--fs-xl); }
+  .menu-card--start .ui-icon { --icon-size: 52px; }
+  .stamp-card { min-height: calc(var(--touch) * 1.6); }
+  .stamp-card-badges img { flex-basis: 56px; width: 56px; height: 56px; }
+  .stamp-card-gift img { width: 64px; height: 56px; }
+  .region-screen { max-width: 1560px; }
+  .region-pokemon { max-height: 280px; }
+  .region-label span { font-size: var(--fs-l); }
+}
+/* 태블릿·PC 선물 장면: 「신난다!」 버튼이 화면 폭 절반(최대 960px)으로 얇고 길게 늘어나 있었다 → 넉넉한 크기로 고정, 포켓몬은 화면에 맞춰 더 크게. */
+@media (orientation: portrait) and (min-width: 721px), (orientation: landscape) and (min-height: 521px) {
+  .gift-scene.revealed > .button { min-width: min(100%, 360px); min-height: calc(var(--touch) + var(--gap-m)); font-size: var(--fs-xl); }
+  .gift-scene.revealed .gift-pokemon, .gift-scene::after { width: min(52vmin, 460px); }
+}
+
+/* 설명 글씨 대신 항상 같은 그림과 색으로 구분한다. 화면 읽기 이름은 버튼에 남긴다. */
+.corner-pill { padding: 0; gap: 0; }
+.corner-pill-label { display: none; }
+.home-button { background: var(--c-blue); }
+.corner-button:has(.icon-settings) { background: var(--c-purple); }
+.dex-button { background: var(--c-primary); }
+.map-button { background: var(--c-green); }
+.bag-button { background: var(--c-gold); }

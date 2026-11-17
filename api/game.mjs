@@ -1,0 +1,1 @@
+export default function deviceOnly(_req,res){res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('X-Content-Type-Options','nosniff');res.statusCode=410;res.end(JSON.stringify({error:'이 버전은 기기에만 기록을 저장합니다. 새로고침해 주세요.'}));}

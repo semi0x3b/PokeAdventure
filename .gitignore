@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env*
+.vercel/
+.data/
+.DS_Store
+.test/*.log

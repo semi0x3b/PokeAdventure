@@ -1,0 +1,270 @@
+/* 게임 장식 모션. game.css와 battle-view.css 뒤에 불러온다. */
+:root {
+  --adventure-motion-gold: rgba(255, 220, 117, .9);
+  --adventure-motion-shadow: rgba(72, 61, 30, .22);
+  --adventure-motion-ripple: rgba(255, 253, 232, .94);
+}
+:where(.adventure-motion-ripple-host) { position: relative; }
+/* 배틀 장면 위 효과. 위치는 battle-view.css 가 .go-battle 에 정한 상대·우리 편 기준점(--gb-*)을 따른다. */
+.adventure-motion__reveal-light,
+.adventure-motion__hit {
+  position: absolute;
+  left: var(--gb-enemy-x, 70%);
+  top: var(--gb-enemy-cy, 45%);
+  width: clamp(96px, 30%, 240px);
+  height: auto;
+  margin: 0;
+  pointer-events: none;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  z-index: 5;
+}
+.adventure-motion__reveal-light { border-radius: 50%; background: radial-gradient(circle, var(--c-surface) 0 18%, var(--adventure-motion-gold) 42%, transparent 70%); }
+.adventure-motion__hit--own { left: var(--gb-own-x, 25%); top: var(--gb-own-cy, 70%); }
+/* ── 효과 조각(adventure-motion.js piece·scatter·quake). 자리는 장면 기준점, 움직임은 아래 CSS 애니메이션. ── */
+.adventure-motion__fx--enemy { left: var(--gb-enemy-x, 70%); top: var(--gb-enemy-cy, 45%); }
+.adventure-motion__fx--own { left: var(--gb-own-x, 25%); top: var(--gb-own-cy, 70%); }
+.adventure-motion__fx--ball { left: var(--gb-enemy-x, 70%); top: calc(var(--gb-enemy-y, 63%) - var(--gb-ball, 180px) / 2); }
+.adventure-motion__ring,
+.adventure-motion__light,
+.adventure-motion__rays,
+.adventure-motion__spark,
+.adventure-motion__confetti {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+/* 맞은 순간 장면 전체가 하얗게 한 번(1초에 한 번뿐이라 깜빡임 기준 안). */
+.adventure-motion__flash {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  background: var(--c-surface);
+  opacity: 0;
+  pointer-events: none;
+  animation: adventure-motion-flash .34s ease-out both;
+}
+/* 퍼지는 충격 고리: 정답 금빛, 피격 보라, 공개·착지 흰빛. */
+.adventure-motion__ring {
+  z-index: 5;
+  box-sizing: border-box;
+  width: clamp(90px, 26%, 220px);
+  aspect-ratio: 1;
+  border: 6px solid var(--c-gold);
+  border-radius: 50%;
+  box-shadow: 0 0 18px var(--c-gold), inset 0 0 12px var(--c-surface);
+  animation: adventure-motion-ring .7s cubic-bezier(.2, .7, .3, 1) both;
+}
+.adventure-motion__ring--purple { border-color: var(--c-purple); box-shadow: 0 0 18px var(--c-purple), inset 0 0 12px var(--c-surface); }
+.adventure-motion__ring--light { border-color: var(--c-surface); box-shadow: 0 0 16px var(--c-surface); }
+.adventure-motion__ring--big { width: clamp(120px, 36%, 300px); animation-duration: 1s; }
+/* 빨려 들어갈 때 상대 자리에서 터지는 빛. */
+.adventure-motion__light {
+  z-index: 5;
+  width: clamp(140px, 44%, 360px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--c-surface) 0, var(--c-gold) 32%, transparent 66%);
+  animation: adventure-motion-light .8s ease-out both;
+}
+/* 공개 순간 포켓몬 뒤에서 도는 햇살(금색 볼은 금빛). 포켓몬(z-index 1)보다 뒤. */
+.adventure-motion__rays {
+  z-index: 0;
+  width: max(90vmin, 520px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(var(--c-glass) 0 8deg, transparent 8deg 22deg);
+  -webkit-mask: radial-gradient(circle, var(--c-ink) 16%, transparent 66%);
+  mask: radial-gradient(circle, var(--c-ink) 16%, transparent 66%);
+  animation: adventure-motion-rays 1.8s ease-out both;
+}
+.go-battle.is-gold .adventure-motion__rays { background: repeating-conic-gradient(var(--c-gold) 0 8deg, transparent 8deg 22deg); }
+.adventure-motion__spark,
+.adventure-motion__confetti {
+  z-index: 6;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+/* 반짝임·별이 한 점에서 사방으로(방향 --dx/--dy, 조금씩 늦게 --fx-delay). */
+.adventure-motion__spark {
+  --fx-reach: clamp(70px, 20vmin, 170px);
+  width: clamp(30px, 8%, 64px);
+  animation: adventure-motion-spark .8s cubic-bezier(.15, .7, .3, 1) var(--fx-delay, 0ms) both;
+}
+/* 잡았을 때 별 촤라라: 솟았다가 포물선으로 쏟아진다. */
+.adventure-motion__confetti {
+  --fx-reach: clamp(90px, 26vmin, 220px);
+  --fx-lift: clamp(30px, 8vmin, 70px);
+  --fx-drop: clamp(110px, 30vmin, 260px);
+  width: clamp(28px, 7%, 56px);
+  animation: adventure-motion-confetti 1.25s var(--fx-delay, 0ms) both;
+}
+/* 장면 전체 덜컹. 카메라가 쓰는 transform 과 겹치지 않게 translate·scale 속성만 움직인다. */
+.gb-stage.adventure-motion-quake { animation: adventure-motion-quake .48s ease-out both; }
+.gb-stage.adventure-motion-quake--soft { animation: adventure-motion-quake-soft .36s ease-out both; }
+.dex-entry .adventure-motion__new-star {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  pointer-events: none;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px var(--adventure-motion-shadow));
+  z-index: 3;
+}
+.adventure-motion__ripple {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 0;
+  border: 3px solid var(--adventure-motion-ripple);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--adventure-motion-shadow);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 6;
+}
+@keyframes adventure-motion-advance {
+  0%, 100% { transform: translate(0, 0); }
+  45% { transform: translate(18%, -10%); }
+}
+@keyframes adventure-motion-flinch {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-6%, 0) rotate(-3deg); }
+  60% { transform: translate(4%, 0) rotate(2deg); }
+}
+@keyframes adventure-motion-hit {
+  0%, 100% { transform: translateX(0); opacity: 1; }
+  30% { transform: translateX(-8%); opacity: .55; }
+  65% { transform: translateX(5%); opacity: .85; }
+}
+@keyframes adventure-motion-lunge {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  45% { transform: translate(-16%, 8%) scale(1.08); }
+}
+@keyframes adventure-motion-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4) rotate(-12deg); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(4deg); }
+  70% { opacity: 1; transform: translate(-50%, -50%) scale(1.16) rotate(6deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3) rotate(8deg); }
+}
+@keyframes adventure-motion-reveal-pop {
+  0% { filter: brightness(8); transform: scale(.82); }
+  55% { filter: brightness(1.4); transform: scale(1.12); }
+  80% { filter: brightness(1); transform: scale(.97); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+@keyframes adventure-motion-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes adventure-motion-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adventure-motion-reveal-light {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.45); }
+  35% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+}
+@keyframes adventure-motion-star {
+  0% { opacity: 0; transform: scale(.35) rotate(-18deg); }
+  24% { opacity: 1; transform: scale(1.12) rotate(6deg); }
+  78% { opacity: 1; transform: scale(1) rotate(0); }
+  100% { opacity: 0; transform: scale(.85) rotate(0); }
+}
+@keyframes adventure-motion-register {
+  0% { transform: scale(.97); }
+  30% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+@keyframes adventure-motion-stamp {
+  0% { opacity: 0; transform: scale(1.35) rotate(-13deg); }
+  55% { opacity: 1; transform: scale(.92) rotate(-5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes adventure-motion-ripple {
+  from { opacity: .75; transform: translate(var(--adventure-ripple-x), var(--adventure-ripple-y)) translate(-50%, -50%) scale(.3); }
+  to { opacity: 0; transform: translate(var(--adventure-ripple-x), var(--adventure-ripple-y)) translate(-50%, -50%) scale(1.6); }
+}
+@keyframes adventure-motion-flash { 0% { opacity: 0; } 25% { opacity: .5; } 100% { opacity: 0; } }
+@keyframes adventure-motion-ring {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(.2); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(2.4); }
+}
+@keyframes adventure-motion-light {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); }
+  30% { opacity: .95; transform: translate(-50%, -50%) scale(.9); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+@keyframes adventure-motion-rays {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4) rotate(0); }
+  25% { opacity: .95; transform: translate(-50%, -50%) scale(1) rotate(12deg); }
+  70% { opacity: .7; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.15) rotate(40deg); }
+}
+@keyframes adventure-motion-spark {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0); }
+  20%, 55% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * var(--fx-reach)), calc(-50% + var(--dy) * var(--fx-reach))) scale(var(--fx-scale, 1)) rotate(120deg); }
+}
+@keyframes adventure-motion-confetti {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  10% { opacity: 1; }
+  38% { opacity: 1; transform: translate(calc(-50% + var(--dx) * var(--fx-reach)), calc(-50% + var(--dy) * var(--fx-reach) - var(--fx-lift))) scale(var(--fx-scale, 1)) rotate(160deg); animation-timing-function: cubic-bezier(.5, 0, .9, .6); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * var(--fx-reach) * 1.4), calc(-50% + var(--dy) * var(--fx-reach) * .6 + var(--fx-drop))) scale(.7) rotate(340deg); }
+}
+@keyframes adventure-motion-quake {
+  0%, 100% { translate: 0 0; scale: 1; }
+  12% { translate: -10px 4px; scale: 1.03; }
+  28% { translate: 9px -5px; }
+  44% { translate: -7px 3px; }
+  60% { translate: 5px -2px; }
+  80% { translate: -2px 1px; scale: 1.03; }
+}
+@keyframes adventure-motion-quake-soft {
+  0%, 100% { translate: 0 0; scale: 1; }
+  20% { translate: 0 6px; scale: 1.02; }
+  45% { translate: 0 -3px; }
+  70% { translate: 0 2px; scale: 1.02; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adventure-motion__reveal-light,
+  .adventure-motion__new-star,
+  .adventure-motion__ripple,
+  .adventure-motion__flash,
+  .adventure-motion__ring,
+  .adventure-motion__light,
+  .adventure-motion__rays,
+  .adventure-motion__spark,
+  .adventure-motion__confetti { display: none; animation: none !important; }
+  .gb-stage.adventure-motion-quake,
+  .gb-stage.adventure-motion-quake--soft { animation: none !important; }
+}
+
+/* 라즈열매(튜토리얼 첫 배틀·「먹이 주기」로 잡을 때): 우리 쪽에서 포물선으로 날아가 상대 앞에서 사라진다(0.8초). */
+.adventure-motion__berry {
+  position: absolute;
+  z-index: 6;
+  width: clamp(44px, 9%, 72px);
+  height: auto;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: adventure-motion-berry-toss .8s ease-in-out both;
+}
+@keyframes adventure-motion-berry-toss {
+  0% { left: var(--gb-own-x, 27%); top: var(--gb-own-cy, 80%); opacity: 1; rotate: 0deg; }
+  50% { top: calc(var(--gb-enemy-cy, 45%) - 14%); }
+  85% { opacity: 1; }
+  100% { left: var(--gb-enemy-x, 64%); top: var(--gb-enemy-cy, 45%); opacity: 0; rotate: 540deg; }
+}
+/* 모션 줄이기: 열매는 날아가지 않고 상대 앞(몸 아래쪽)에 가만히 보였다가 연출이 끝나면 사라진다(움직임만 빠짐). */
+.adventure-motion__berry.adventure-motion__berry--still {
+  left: var(--gb-enemy-x, 64%);
+  top: calc(var(--gb-enemy-y, 58%) - var(--gb-enemy-h, 20%) * .2);
+  animation: none;
+}

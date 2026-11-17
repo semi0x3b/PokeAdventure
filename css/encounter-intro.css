@@ -1,0 +1,116 @@
+/* 배틀 진입 그림자 소개(포켓몬 GO 등장 화면 느낌). 화면 전체 장면, 위쪽 작은 이름표(???), 가운데 큰 그림자,
+   그 아래 흰 글씨 한 줄(상자 없이 그림자 글씨). 금색 볼은 큰 반짝임이 흩어진다. 색·글씨·모양은 tokens.css 값만 쓴다. */
+.encounter-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-l);
+  padding: calc(var(--safe-top) + var(--gap-l)) calc(var(--safe-right) + var(--gap-l)) calc(var(--safe-bottom) + var(--gap-l)) calc(var(--safe-left) + var(--gap-l));
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--c-ink);
+  font-family: var(--font);
+  pointer-events: auto;
+  touch-action: none;
+  transition: opacity .7s ease;
+}
+/* 배경이 가운데(상대 쪽)로 천천히 당겨진다. */
+.encounter-intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: center 100% / cover no-repeat;
+  /* 발견 순간은 배경을 조금 어둡게(2026-11-13 사용자). 그림자 뒤 빛(::after)이 그림자를 또렷하게 받쳐 준다. */
+  filter: brightness(.55) saturate(.85);
+  animation: encounter-zoom 4.5s cubic-bezier(.2, .7, .3, 1) both;
+}
+.encounter-intro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at 50% 45%, var(--c-glass), transparent 62%);
+  opacity: .7;
+  /* 그림자 뒤의 빛도 두근두근에 맞춰 커졌다 작아진다. */
+  animation: encounter-glow .8s ease-in-out 2s 2;
+}
+.encounter-intro--gold::after { background: radial-gradient(ellipse at 50% 45%, var(--c-gold), transparent 62%); opacity: .6; }
+.encounter-intro[data-region=forest]::before { background-image: url('../img/battle/bg-forest-landscape.webp'); }
+.encounter-intro[data-region=city]::before { background-image: url('../img/battle/bg-city-landscape.webp'); }
+.encounter-intro[data-region=desert]::before { background-image: url('../img/battle/bg-desert-landscape.webp'); }
+.encounter-intro[data-region=sea]::before { background-image: url('../img/battle/bg-sea-landscape.webp'); }
+@media (orientation: portrait) {
+  .encounter-intro[data-region=forest]::before { background-image: url('../img/battle/bg-forest-portrait.webp'); }
+  .encounter-intro[data-region=city]::before { background-image: url('../img/battle/bg-city-portrait.webp'); }
+  .encounter-intro[data-region=desert]::before { background-image: url('../img/battle/bg-desert-portrait.webp'); }
+  .encounter-intro[data-region=sea]::before { background-image: url('../img/battle/bg-sea-portrait.webp'); }
+}
+.encounter-tag {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--gap-s));
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-s);
+  width: max-content;
+  margin: 0 auto;
+  padding: 0;
+  color: var(--c-surface);
+  font-size: var(--fs-l);
+  font-weight: var(--fw-heavy);
+  text-shadow: var(--text-outline);
+}
+.encounter-tag-ball { width: 30px; height: 30px; background: var(--gb-ball-red-art, url('../img/art/balls/ball-red.png')) center / contain no-repeat; }
+.encounter-intro--gold .encounter-tag-ball { background-image: var(--gb-ball-gold-art, url('../img/art/balls/ball-gold.png')); }
+/* 포켓몬은 가운데 크게: 세로 화면은 폭의 70%, 가로 화면은 높이의 60% 안팎, 큰 화면은 최대 460px. */
+.encounter-silhouette {
+  display: block;
+  flex: 0 1 auto;
+  width: min(70vw, 60vh, 460px);
+  height: min(70vw, 60vh, 460px);
+  width: min(70vw, 60dvh, 460px);
+  height: min(70vw, 60dvh, 460px);
+  min-height: 0;
+  object-fit: contain;
+  filter: brightness(0) drop-shadow(0 12px 6px var(--c-scrim));
+  /* 떠오른 뒤(0.4~1.8초) 두근, 두근(2.0~3.6초, 심장 뛰듯 두 번). */
+  animation: encounter-arrive 1.4s cubic-bezier(.3, 1.4, .5, 1) .4s both, encounter-heartbeat .8s ease-in-out 2s 2;
+}
+.encounter-intro p {
+  margin: 0;
+  max-width: 100%;
+  color: var(--c-surface);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-heavy);
+  line-height: 1.3;
+  text-align: center;
+  word-break: keep-all;
+  text-shadow: 0 3px 0 var(--c-ink), 0 0 14px var(--c-ink);
+  animation: encounter-line .8s cubic-bezier(.3, 1.4, .5, 1) 1.6s both;
+}
+.encounter-sparkle {
+  position: absolute;
+  width: clamp(56px, 16vmin, 120px);
+  aspect-ratio: 1;
+  background: url('../img/art/icons/star.png') center / contain no-repeat;
+  animation: encounter-twinkle 2.4s ease-in-out infinite;
+}
+.encounter-intro.leaving { opacity: 0; }
+@keyframes encounter-zoom { from { transform: scale(1); } to { transform: scale(1.18); } }
+@keyframes encounter-arrive { from { opacity: 0; transform: translateY(14px) scale(.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes encounter-heartbeat { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.07); } 60% { transform: scale(.98); } }
+@keyframes encounter-line { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+@keyframes encounter-glow { 0%, 100% { opacity: .5; transform: scale(1); } 30% { opacity: .95; transform: scale(1.12); } 60% { opacity: .6; transform: scale(.98); } }
+@keyframes encounter-twinkle { 0%, 100% { opacity: .5; transform: scale(.8) rotate(0); } 50% { opacity: 1; transform: scale(1.1) rotate(12deg); } }
+/* 모션 줄이기: 확대·떠오름·반짝임 움직임 없이 같은 장면을 그대로 보여 준다. */
+@media (prefers-reduced-motion: reduce) {
+  .encounter-intro { transition: none; }
+  .encounter-intro::before, .encounter-intro::after, .encounter-silhouette, .encounter-intro p, .encounter-sparkle { animation: none; }
+}

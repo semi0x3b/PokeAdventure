@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "두근두근 모험",
+  "short_name": "두근모험",
+  "lang": "ko",
+  "start_url": "/?source=home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffdf5",
+  "theme_color": "#bfeaff",
+  "icons": [
+    { "src": "/img/ui-art/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/ui-art/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

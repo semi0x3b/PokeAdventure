@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff9ef">
+<meta name="description" content="걷고, 배우고, 친구를 모으는 어린이 학습 모험">
+<title>두근두근 모험</title>
+<link rel="icon" href="img/ui-art/app-icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="img/ui-art/app-icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="두근두근 모험">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preload" as="image" href="img/ui-art/adventure-logo.webp">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/parent-lock.css">
+<link rel="stylesheet" href="css/app.css">
+<!-- 화면별 파일: 공통(app.css) 뒤에 읽어 같은 이름 규칙을 덮을 수 있게 한다. -->
+<link rel="stylesheet" href="css/field.css">
+<link rel="stylesheet" href="css/dex.css">
+<link rel="stylesheet" href="css/wordbook.css">
+<link rel="stylesheet" href="css/yard.css">
+<link rel="stylesheet" href="css/tutorial.css">
+<link rel="stylesheet" href="css/scene-fx.css">
+<link rel="stylesheet" href="css/learning-art.css">
+<link rel="stylesheet" href="css/battle-view.css">
+<link rel="stylesheet" href="css/encounter-intro.css">
+<link rel="stylesheet" href="css/adventure-motion.css">
+<link rel="stylesheet" href="css/feature-tour.css">
+</head>
+<body data-screen="title">
+
+<div class="app-shell">
+<header class="topbar">
+<div class="top-actions"><button class="corner-button home-button" id="home-button" data-action="nav-back" aria-label="뒤로"><span class="ui-icon icon-back" aria-hidden="true"></span></button></div>
+<div class="top-actions top-actions--end"><button class="corner-button corner-pill dex-button" id="dex-button" data-action="dex" aria-label="도감"><span class="ui-icon icon-dex" aria-hidden="true"></span><span class="corner-pill-label">도감</span></button><button class="corner-button corner-pill map-button" id="map-button" data-action="map" aria-label="지도로 가기"><span class="ui-icon icon-map" aria-hidden="true"></span><span class="corner-pill-label">지도</span></button><button class="corner-button corner-pill bag-button" id="bag-button" data-action="bag" aria-label="가방"><span class="ui-icon icon-bag" aria-hidden="true"></span><span class="corner-pill-label">가방</span></button><button class="corner-button" id="settings-button" data-action="settings" aria-label="설정"><span class="ui-icon icon-settings" aria-hidden="true"></span></button></div>
+</header>
+<button class="button secondary tutorial-skip" id="tutorial-skip" data-action="skip-tutorial" aria-label="피카츄를 받고 튜토리얼 건너뛰기" hidden>건너뛰기</button>
+<main id="main" tabindex="-1"></main>
+</div>
+<div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div>
+<noscript>이 게임을 하려면 브라우저에서 자바스크립트를 켜 주세요.</noscript>
+<script src="js/pokemon-assets.js"></script><script src="js/pokemon-art.js"></script><script src="js/data/pokemon.js"></script><script src="js/data/pokemon-details.js"></script><script src="js/data/questions.js"></script><script src="js/core.js"></script><script src="js/storage.js"></script><script src="js/pokemon-text.js"></script><script src="js/data/trainer-frames.js"></script><script src="js/trainer.js"></script><script src="js/data/field-sprites.js"></script><script src="js/companion.js"></script><script src="js/scene-fx.js"></script><script src="js/narration.js"></script><script src="js/voice-guide.js"></script><script src="js/audio.js"></script><script src="js/data/learn-pictures.js"></script><script src="js/learning-art.js"></script><script src="js/tracing.js"></script><script src="js/data/strokes-font.js"></script><script src="js/data/strokes.js"></script><script src="js/guided-tracing.js"></script><script src="js/ambient.js"></script><script src="js/battle-view.js"></script><script src="js/title-poster.js"></script><script src="js/adventure-motion.js"></script><script src="js/encounter-intro.js"></script><script src="js/data/words.js"></script><script src="js/wordbook.js"></script><script src="js/dex-hint.js"></script><script src="js/yard.js"></script><script src="js/tutorial.js"></script><script src="js/feature-tour.js"></script><script src="js/game.js"></script><script src="js/install.js"></script>
+<script src="js/field-map.js"></script>
+</body></html>
