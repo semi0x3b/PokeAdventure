@@ -1,6 +1,6 @@
 이 폴더의 그림은 「Ninja Adventure - Asset Pack」(Pixel-boy, AAA)에서 골라 이름만 바꿔 복사했다.
 출처: https://pixel-boy.itch.io/ninja-adventure-asset-pack  (묶음 안 README: Assets created by Pixel-boy https://pixel-boy.itch.io/ , AAA)
-라이선스: Creative Commons Zero (CC0) 1.0 — 아래는 묶음에 들어 있던 LICENSE.txt 원문 그대로다. 파일별 원래 경로는 docs/ASSETS.md.
+라이선스: Creative Commons Zero (CC0) 1.0 — 아래는 묶음에 들어 있던 LICENSE.txt 원문 그대로다. 자료별 출처·권리는 저장소 README.md도 참고한다.
 
 ----------------------------------------------------------------------
 CC0 1.0 Universal
