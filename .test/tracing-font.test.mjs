@@ -62,3 +62,15 @@ test('실제 글꼴 모든 지원 문자의 중심선을 화살표대로 쓰면 
   assert.ok(tracker.progress.complete,character+' 화살표 진행 '+JSON.stringify(tracker.progress));
  }
 });
+
+test('ㅊ의 첫 짧은 획은 초성·받침 모두 본체 가로획 위에 따로 놓인다',()=>{
+ const characters=Object.keys(glyphs).filter(c=>c==='ㅊ'||c>='가'&&c<='힣'&&(Math.floor((c.charCodeAt(0)-0xAC00)/588)===14||(c.charCodeAt(0)-0xAC00)%28===23));
+ assert.ok(characters.includes('꽃')&&characters.includes('차')&&characters.includes('치'));
+ for(const character of characters){
+  const glyph=letters.glyph(character);
+  const index=character!=='ㅊ'&&(character.charCodeAt(0)-0xAC00)%28===23?glyph.strokes.length-3:0;
+  const [dot,body]=glyph.strokes.slice(index,index+2);
+  assert.ok(Math.max(...dot.map(p=>p.y))+4<Math.min(...body.map(p=>p.y)),character+' ㅊ 첫 획이 본체 가로획과 겹치지 않음');
+  assert.ok(dot[0].x<dot.at(-1).x,character+' 짧은 획은 왼쪽에서 오른쪽으로');
+ }
+});

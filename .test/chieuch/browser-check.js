@@ -1,0 +1,24 @@
+const p=await openTab('http://127.0.0.1:4416/');await p.bringToFront();await p.setViewportSize({width:393,height:740});
+console.log((await snapshot(p,{interactive:true})).tree);
+try{await p.evaluate(async()=>{const r=await navigator.serviceWorker.ready;await r.update();});}catch{}
+await p.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return !r?.installing&&!r?.waiting&&window.StrokeLetters?.glyph('꽃').strokes[4][0].y<60;},null,{timeout:25000});
+await p.locator('[data-action=account]').click();await p.locator('#auth-form [name=name]').fill('꼬마탐험가');for(const d of ['2','4','6','8'])await p.locator('[data-pin-key="'+d+'"]').click();await p.locator('#auth-form [type=submit]').click();await p.locator('.title-menu').waitFor({state:'visible',timeout:20000});await p.waitForFunction(()=>!SceneFX.active&&Number(getComputedStyle(document.querySelector('.title-menu')).opacity)>.99);
+console.log((await snapshot(p,{interactive:true})).diff);
+await p.evaluate(()=>{GameStorage.update({settings:{sound:false}},true);window.qaFixedDot=TRACING_FONT_GLYPHS['꽃'].strokes[4];const original=GuidedTracingPad;window.GuidedTracingPad={...original,create(...args){window.qaPad=original.create(...args);return window.qaPad;}};});
+await p.locator('.title-menu [data-action=wordbook]').click();await p.locator('.wordbook-canvas').waitFor({state:'visible',timeout:15000});await p.waitForFunction(()=>!SceneFX.active);
+async function flower(){await p.locator('.wordbook-list-button').click();await p.locator('[data-wordbook-card="ko-flower"]').click();await p.locator('.wordbook-canvas').waitFor({state:'visible'});await p.waitForFunction(()=>document.querySelector('.wordbook-sample img').complete&&document.fonts.status==='loaded');}
+async function save(name){await p.locator('.wordbook-intro').waitFor({state:'detached'});const data=await p.evaluate(()=>document.querySelector('.wordbook-canvas').toDataURL('image/png'));console.log('QA_IMAGE '+name+' '+data.split(',')[1]);}
+await p.evaluate(dot=>{TRACING_FONT_GLYPHS['꽃'].strokes[4]=dot;},[[39.17,68.33],[40.86,68.33],[42.56,68.33],[44.26,68.33],[45.95,68.33],[47.65,68.33],[49.35,68.33],[51.04,68.33],[52.74,68.33],[54.43,68.33],[56.13,68.33],[57.83,68.33],[59.52,68.33],[61.22,68.33],[62.92,68.33]]);
+await flower();await save('before');
+await p.evaluate(()=>{TRACING_FONT_GLYPHS['꽃'].strokes[4]=window.qaFixedDot;});
+await flower();await save('after');
+console.log('QA_FLOWER '+JSON.stringify(await p.evaluate(()=>{const strokes=StrokeLetters.glyph('꽃').strokes;return {dotStart:strokes[4][0],bodyStart:strokes[5][0],count:strokes.length,guide:document.querySelector('.wordbook-canvas').getAttribute('aria-label')};})));
+// 실제 캔버스에 순서대로 마우스로 써 보고 완료 상태를 확인한다.
+const geometry=await p.evaluate(()=>{
+ const c=document.querySelector('.wordbook-canvas'),r=c.getBoundingClientRect(),probe=document.createElement('span');probe.style.cssText='position:absolute;visibility:hidden;padding:var(--trace-inset-top,0px) var(--trace-inset-right,0px) var(--trace-inset-bottom,0px) var(--trace-inset-left,0px)';c.parentNode.append(probe);const style=getComputedStyle(probe),[top,right,bottom,left]=['Top','Right','Bottom','Left'].map(s=>Math.max(0,parseFloat(style['padding'+s])||0));probe.remove();const w=Math.round(r.width),h=Math.round(r.height),aw=w-left-right,ah=h-top-bottom,scale=Math.min(ah*.68/100,aw*.86/100),x=left+(aw-100*scale)/2,y=top+(ah-100*scale)/2;return StrokeLetters.glyph('꽃').strokes.map(s=>s.map(v=>({x:r.left+x+v.x*scale,y:r.top+y+v.y*scale})));});
+for(let index=0;index<geometry.length;index++){
+ const points=geometry[index];await p.mouse.move(points[0].x,points[0].y);await p.mouse.down();for(let n=1;n<points.length;n+=3)await p.mouse.move(points[n].x,points[n].y);await p.mouse.move(points.at(-1).x,points.at(-1).y);await p.mouse.up();
+ const state=await p.evaluate(()=>window.qaPad.progress);if(state.strokeIndex!==index+1)throw Error('획 진행 실패 '+index+' '+JSON.stringify(state));
+}
+console.log('QA_RESULT '+JSON.stringify(await p.evaluate(()=>({complete:window.qaPad.progress.complete,count:window.qaPad.progress.strokeIndex,grade:window.qaPad.score({}).pass}))));
+await save('completed');
