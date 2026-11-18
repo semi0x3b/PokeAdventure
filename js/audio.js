@@ -103,15 +103,15 @@
   const cryEl = (typeof Audio !== 'undefined') ? new Audio() : null;
   let cryUnlocked = false;
   let cryVersion = 0;
-  const cryOgg = !cryEl?.canPlayType || Boolean(cryEl.canPlayType('audio/ogg; codecs="vorbis"'));
   if (cryEl) { cryEl.preload = 'auto'; cryEl.setAttribute('playsinline', ''); }
   function unlockCry() {
     if (!cryEl || cryUnlocked) return;
     cryUnlocked = true;
+    const version = cryVersion;
     try {
-      cryEl.muted = true; cryEl.src = cryOgg ? window.PokemonAssets.cry(25) : 'https://play.pokemonshowdown.com/audio/cries/pikachu.mp3';
+      cryEl.muted = true; cryEl.src = 'https://play.pokemonshowdown.com/audio/cries/pikachu.mp3';
       const pr = cryEl.play();
-      if (pr && pr.then) pr.then(() => { cryEl.pause(); cryEl.muted = false; }).catch(() => { cryEl.muted = false; cryUnlocked = false; });
+      if (pr && pr.then) pr.then(() => { if(version===cryVersion){cryEl.pause();cryEl.muted=false;} }).catch(() => { if(version===cryVersion){cryEl.muted=false;cryUnlocked=false;} });
       else { cryEl.pause(); cryEl.muted = false; }
     } catch (e) { cryEl.muted = false; cryUnlocked = false; }
   }
@@ -294,12 +294,17 @@
     cry(id) {
       if (!on || !cryEl || !id) return;
       const version=++cryVersion;
+      let retried = false;
+      const fallback=()=>{
+        if(retried||!on||version!==cryVersion)return;
+        retried=true;
+        void window.PokemonAssets.playableCry(id,false).then(play).catch(()=>{});
+      };
       const play=source=>{
         if(!source||!on||version!==cryVersion)return;
-        try { cryEl.pause();cryEl.muted=false;cryEl.src=source;cryEl.currentTime=0;const pr=cryEl.play();if(pr?.catch)pr.catch(()=>{});updateDuck(); } catch { /* 소리 실패로 게임을 멈추지 않는다. */ }
+        try { cryEl.pause();cryEl.muted=false;cryEl.onerror=fallback;cryEl.src=source;cryEl.currentTime=0;const pr=cryEl.play();if(pr?.catch)pr.catch(fallback);updateDuck(); } catch { fallback(); }
       };
-      if(cryOgg)play(window.PokemonAssets.cry(id));
-      else void window.PokemonAssets.playableCry(id,false).then(play).catch(()=>{});
+      void window.PokemonAssets.playableCry(id).then(source=>source?play(source):fallback()).catch(fallback);
     },
     // 지금 나는 울음소리가 끝날 때까지 남은 시간(ms). 안 나고 있거나(소리 끔·막힘·끝남) 길이를 아직 모르면 0.
     // 배틀 공개(game.js)가 울음소리 위에 문제 읽기가 얹히지 않게 기다리는 데 쓴다.
