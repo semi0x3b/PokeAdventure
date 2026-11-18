@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "fixture": true,
+  "shots": [
+    "title",
+    "dex",
+    "writing",
+    "yard",
+    "regions",
+    "field"
+  ],
+  "walkingFrames": 16,
+  "apiRequests": 0
+}
