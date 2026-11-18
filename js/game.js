@@ -2172,9 +2172,21 @@
   function spriteImage(source) {
     if (!fieldSpriteImages.has(source)) {
       const record = { image: new Image(), failed: false };
+      const alternatives = window.PokemonAssets.alternatives(source);
+      let timer;
+      const retry = () => {
+        clearTimeout(timer);
+        const next = alternatives.shift();
+        if (next) {
+          record.image.src = next;
+          timer = setTimeout(retry, 9000);
+        } else record.failed = true;
+      };
       record.image.crossOrigin = 'anonymous';
-      record.image.onerror = () => { record.failed = true; };
+      record.image.onerror = retry;
+      record.image.onload = () => { clearTimeout(timer); record.failed = false; };
       record.image.src = source;
+      timer = setTimeout(retry, 9000);
       fieldSpriteImages.set(source, record);
     }
     return fieldSpriteImages.get(source);
@@ -3277,7 +3289,7 @@
       const anchorX = id === 25 && frame.body ? frame.body[0] : frame.ground[0];
       node.style.width = (draw.right - draw.left) + 'px';
       node.style.height = (draw.bottom - draw.top) + 'px';
-      node.style.backgroundImage = 'url("' + frame.src + '")';
+      node.style.backgroundImage = 'url("' + loadedOf(frame).image.src + '")';
       node.style.backgroundRepeat = 'no-repeat';
       node.style.backgroundSize = (pixelWidth * frame.columns) + 'px ' + (pixelHeight * frame.rows) + 'px';
       node.style.backgroundPosition = (-frame.column * pixelWidth - (anchorX * scale + draw.left)) + 'px ' + (-frame.row * pixelHeight - (frame.ground[1] * scale + draw.top)) + 'px';
@@ -3303,7 +3315,7 @@
     const bob = pose.moving && !reduced ? Math.sin(field.time * 11) * 3 : 0;
     node.style.width = box + 'px';
     node.style.height = box + 'px';
-    node.style.backgroundImage = 'url("' + source + '")';
+    node.style.backgroundImage = 'url("' + spriteImage(source).image.src + '")';
     node.style.backgroundRepeat = 'no-repeat';
     node.style.backgroundSize = 'contain';
     node.style.backgroundPosition = 'center bottom';

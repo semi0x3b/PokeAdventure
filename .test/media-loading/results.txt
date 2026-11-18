@@ -1,0 +1,6 @@
+QA_INITIAL {"sw":true,"route":"function","images":[{"ready":true,"src":"blob:h"},{"ready":true,"src":"blob:h"},{"ready":true,"src":"blob:h"},{"ready":true,"src":"blob:h"}]}
+QA_AUDIO [{"ready":4,"duration":0.87998,"error":null}]
+QA_FALLBACK {"source":"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/7.png","loaded":512}
+QA_FIELD [{"id":"25","source":"https://raw.githubusercontent.com/PMDCollab/SpriteCollab/85d87bc6c4237c29dbe268c99ebb8cfaa1d54918/sprite/0025/Idle-Anim.png","visible":true,"width":117},{"id":"1","source":"https://raw.githubusercontent.com/PMDCollab/SpriteCollab/85d87bc6c4237c29dbe268c99ebb8cfaa1d54918/sprite/0001/Idle-Anim.png","visible":true,"width":116}]
+QA_SILHOUETTE {"ready":437,"filter":"brightness(0)"}
+QA_RESULT pass

@@ -3,7 +3,7 @@ function worker(){
  const handlers=new Map(),stores=new Map();
  const caches={async open(name){if(!stores.has(name))stores.set(name,new Map());const rows=stores.get(name);return{async match(request){return rows.get(typeof request==='string'?request:request.url);},async put(request,response){rows.set(typeof request==='string'?request:request.url,response);},async keys(){return[...rows.keys()];},async delete(key){return rows.delete(key);},async addAll(paths){for(const path of paths)rows.set(path,new Response('locked-shell'));}};},async keys(){return[...stores.keys()];},async delete(name){return stores.delete(name);}};
  const self={APP_REVISION:'test',APP_SHELL:['/index.html','/js/storage.js'],location:{origin:'https://game.example'},addEventListener(name,fn){handlers.set(name,fn);},skipWaiting:async()=>{},clients:{claim:async()=>{}}};
- const scope={self,URL,Response,caches,importScripts(){},fetch:async()=>{throw Error('offline');}};
+ const scope={self,URL,Response,Headers,AbortController,setTimeout,clearTimeout,caches,importScripts(){},fetch:async()=>{throw Error('offline');}};
  vm.runInNewContext(fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8'),scope);
  return{handlers,caches,scope};
 }
@@ -22,7 +22,7 @@ test('받은 그림이 많아도 별도 미디어 캐시가 화면·잠금 코�
  w.scope.fetch=async()=>new Response('image');
  for(let n=0;n<105;n++){let response;w.handlers.get('fetch')({request:{url:'https://game.example/img/'+n+'.png',method:'GET',mode:'cors'},respondWith(p){response=p;}});await response;}
  assert.ok(await(await w.caches.open('poke-adventure-shell-test')).match('/index.html'));
- assert.equal((await(await w.caches.open('poke-adventure-media-v1')).keys()).length,100);
+ assert.equal((await(await w.caches.open('poke-adventure-media-v2')).keys()).length,100);
 });
 
 test('캐시 저장 공간이 부족해도 정상으로 받은 외부 그림 응답을 반환한다',async()=>{

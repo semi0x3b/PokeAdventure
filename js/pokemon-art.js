@@ -14,6 +14,26 @@
   root.PokemonArt = Object.freeze({ geometry });
   if (!root.document?.addEventListener || !root.MutationObserver) return;
   const cache = new Map();
+  const recoveries = new WeakMap();
+  function recover(image) {
+    if (!image?.isConnected) return;
+    let state = recoveries.get(image);
+    if (!state) {
+      const source = image.dataset.assetSource || image.src;
+      const choices = root.PokemonAssets?.alternatives(source) || [];
+      if (!choices.length) return;
+      state = { choices, timer:null };
+      recoveries.set(image, state);
+    }
+    root.clearTimeout(state.timer);
+    const next = state.choices.shift();
+    if (next) {
+      image.removeAttribute('srcset');
+      image.removeAttribute('sizes');
+      image.src = next;
+      state.timer = root.setTimeout(() => { if (!image.complete || !image.naturalWidth) recover(image); }, 9000);
+    }
+  }
   function sourceKind(url) {
     const match = url.match(model);
     if (match) return { id:Number(match[2]), back:Boolean(match[1]), model:true };
@@ -23,7 +43,14 @@
   function prepare(node) {
     if (node.nodeType !== 1) return;
     const images = node.tagName === 'IMG' ? [node] : [...node.querySelectorAll('img')];
-    for (const image of images) if (sourceKind(image.src) && image.crossOrigin !== 'anonymous') image.crossOrigin = 'anonymous';
+    for (const image of images) if (sourceKind(image.src)) {
+      if (image.crossOrigin !== 'anonymous') image.crossOrigin = 'anonymous';
+      if (!image.complete && !recoveries.has(image)) {
+        const state = {choices:root.PokemonAssets?.alternatives(image.src) || [], timer:null};
+        recoveries.set(image, state);
+        state.timer = root.setTimeout(() => { if (!image.complete || !image.naturalWidth) recover(image); }, 9000);
+      }
+    }
   }
   async function raster(image, kind) {
     const w=image.naturalWidth,h=image.naturalHeight;
@@ -47,6 +74,7 @@
   document.addEventListener('load',event=>{
     const image=event.target;
     if(image?.tagName!=='IMG')return;
+    root.clearTimeout(recoveries.get(image)?.timer);
     const source=image.src,kind=sourceKind(source);
     if(!kind)return;
     if(!cache.has(source))cache.set(source,raster(image,kind).catch(()=>null));
@@ -55,6 +83,7 @@
     });
     if(cache.size>60){const key=cache.keys().next().value;const old=cache.get(key);cache.delete(key);void old.then(url=>{if(url)URL.revokeObjectURL(url);});}
   },true);
+  document.addEventListener('error', event => { if (event.target?.tagName === 'IMG') recover(event.target); }, true);
   new MutationObserver(changes=>{for(const change of changes){if(change.type==='attributes')prepare(change.target);else for(const node of change.addedNodes)prepare(node);}}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
   prepare(document.documentElement);
 })(typeof window==='undefined'?globalThis:window);

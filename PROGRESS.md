@@ -1,5 +1,14 @@
 # 진행 기록
 
+2026-11-18: 외부 그림·울음소리 복구(1.0.2).
+
+- 원본 연결 실패 시 같은 공개 파일의 jsDelivr CDN 주소로 재시도한다. 동행 도트 시트의 실제 로딩 주소를 화면에도 사용하고 로딩 지연/오류로 계속 숨겨지는 상태를 방지했다.
+- 3D WebP 오류 시 앞은 HOME PNG, 뒤는 Showdown back GIF로 복구한다. 실루엣도 같은 그림 복구 경로를 사용한다.
+- PokeAPI .ogg 주소의 실제 MP3 바이트를 확인하고 MIME을 맞춘 Blob으로 재생한다. 실패하면 Showdown MP3를 사용한다. 예전 Safari에서도 AbortSignal.timeout 없이 요청한다. Showdown은 CORS 헤더가 없어 원래 오디오 요청 모드를 보존한다.
+- 미디어 캐시만 v2로 교체한다. 기기 기록·부모 잠금·백업 형식은 바꾸지 않는다. 새 외부 연결을 개인정보 안내/README/CSP에 반영했다.
+- Aside localhost에서 동행 2마리 로딩, 배틀 실루엣 brightness(0), 3D 오류를 강제로 발생시킨 뒤 HOME PNG 복구, 울음 실제 디코딩(readyState4·길이0.87998초)을 확인했다. 실제 iPad Safari 확인은 남는다.
+- 회귀 시험·운영 확인 근거: .test/media-loading/, .test/media-recovery.test.mjs, .test/media-audio.test.mjs, lat.md/media-loading-2026-11-18.md.
+
 2026-11-18: 게임 소개 README와 PR 템플릿 보강.
 
 - GitHub 소개를 학습·수집·모험 중심 문장으로 바꿨다. README는 큰 로고·실제 걷기/포획 GIF·기능별 화면 투어·시작 안내로 구성하고 부모/개발 설명은 접어 뒀다.

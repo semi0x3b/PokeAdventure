@@ -138,7 +138,7 @@ npm start
 
 이 게임은 **비공식·비상업 포켓몬 팬 프로젝트**입니다. Nintendo, Creatures, GAME FREAK, The Pokémon Company의 공식 제품이나 승인·제휴를 주장하지 않습니다. Pokémon 이름·캐릭터·이미지·울음소리의 권리는 각 권리자에게 있습니다. 무료 제공·API 이용·출처 표기가 별도 사용 허가를 뜻하지는 않습니다.
 
-실행용 원작 그림·도트·울음소리 개별 파일은 저장소와 배포물에 묶지 않고 [PokeAPI](https://pokeapi.co/), [SpriteCollab](https://github.com/PMDCollab/SpriteCollab) 등 외부 자료원에서 불러옵니다. Safari의 OGG 미지원 때는 PokeAPI의 종 이름을 확인해 Pokémon Showdown MP3를 사용합니다. 이름·타입·능력치와 프레임 정보는 게임용 JS 데이터에 포함되어 있습니다. 문서의 화면·GIF는 기능을 소개하기 위한 게임 캡처입니다.
+실행용 원작 그림·도트·울음소리 개별 파일은 저장소와 배포물에 묶지 않고 [PokeAPI](https://pokeapi.co/), [SpriteCollab](https://github.com/PMDCollab/SpriteCollab) 등 외부 자료원에서 불러옵니다. 원본 연결 실패 때는 같은 공개 파일의 jsDelivr CDN 주소를 사용합니다. 울음소리는 실제 음원 형식에 맞춰 재생하며 실패하면 PokeAPI의 종 이름을 확인해 Pokémon Showdown MP3를 사용합니다. 이름·타입·능력치와 프레임 정보는 게임용 JS 데이터에 포함되어 있습니다. 문서의 화면·GIF는 기능을 소개하기 위한 게임 캡처입니다.
 
 | 자료 | 출처와 조건 |
 | --- | --- |
