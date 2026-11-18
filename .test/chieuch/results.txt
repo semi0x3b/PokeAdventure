@@ -1,0 +1,2 @@
+QA_FLOWER {"dotStart":{"x":39.28,"y":57.63},"bodyStart":{"x":24.58,"y":68.33},"count":7,"guide":"꽃 따라 쓰기 연습장"}
+QA_RESULT {"complete":true,"count":7,"grade":true}
