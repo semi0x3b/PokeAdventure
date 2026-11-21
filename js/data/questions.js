@@ -145,16 +145,23 @@
     }
   }
 
-  // 가르기: 10까지는 모든 가르기, 20까지는 10과 몇, 그보다 큰 수는 10개 묶음 수·낱개 수(자릿값)로 가른다.
-  // ‘10은 1과 몇?’은 5~7세가 뜻을 몰라(2026-11-13 Aside QA) ‘10개는 1개와 몇 개로 나눌 수 있을까?’로 묻고, 그림도 앞 수만큼을
-  // 색 테두리 무더기로 떼어 놓고 나머지를 점선 테두리 + ? 무더기로 그린다(counting.split, game.js countingPicture).
+  // 가르기: 10까지는 모든 양수 조합, 20까지는 10과 몇. 그림은 알려 준 무더기와 ? 무더기로 나눈다.
+  // 오답도 선택한 수 범위 안에서 고른다. 힌트에는 구할 수나 같은 수를 직접 적지 않는다.
+  function addSplitting(total, part) {
+    const answer = total - part;
+    const level = mathLevel(total);
+    const distractors = rankedDistractors(answer, part, rankTurn++ % 4).filter(value => value <= level);
+    for (let value = 0; distractors.length < 3; value++) {
+      if (value !== answer && !distractors.includes(value)) distractors.push(value);
+    }
+    add('math', mathDifficulty(total), `${numberWithJosa(total, '을', '를')} ${numberWithJosa(part, '과', '와')} 몇으로 나눌까요?`, answer, distractors, {
+      kind: 'split', level, counting: { left: part, right: answer, minus: false, split: true },
+      hint: total > 20 ? '한 묶음은 열 개예요. 빈칸 쪽을 세어 보세요!' : '빈칸이 있는 무더기를 하나씩 세어 보세요!'
+    });
+  }
   for (let total = 2; total <= 20; total++) {
     const parts = total <= 10 ? Array.from({ length: total - 1 }, (_, index) => index + 1) : [...new Set([10, total - 10])];
-    for (const part of parts) {
-      add('math', mathDifficulty(total), `${total}개는 ${part}개와 몇 개로 나눌 수 있을까요?`, total - part, rankedDistractors(total - part, part, rankTurn++ % 4), {
-        kind: 'split', level: mathLevel(total), counting: { left: part, right: total - part, minus: false, split: true }, hint: `떼어 놓은 ${part}개 말고, ? 무더기를 세어 보자!`
-      });
-    }
+    for (const part of parts) addSplitting(total, part);
   }
   for (let total = 21; total <= 100; total++) {
     const tens = Math.floor(total / 10);
@@ -1044,6 +1051,14 @@
     });
   });
 
+
+  // 기존 문제 id를 유지하도록 큰 수의 가르기는 마지막에 덧붙인다.
+  // 낱개가 있으면 몇십과 낱개로, 정십이면 10과 나머지 몇십으로 나눈다(받아내림 없음).
+  for (let total = 21; total <= 100; total++) {
+    const ones = total % 10;
+    const parts = ones ? [total - ones, ones] : [10, total - 10];
+    for (const part of new Set(parts)) addSplitting(total, part);
+  }
 
   function shuffle(items, random = Math.random) {
     const shuffled = items.slice();

@@ -1,0 +1,8 @@
+QA_LIST {"tiles":15,"columns":"112.328px 112.328px 112.344px","snowLocked":true,"mapVisible":true,"scroll":true}
+QA_MAP_RETURN forest
+QA_YARDS {"snow":[25],"robot":[1],"meadow":[25,1],"opened":["robot"],"keys":0}
+QA_49 2
+QA_50 {"companions":[25,1,4],"field":[25,1,4]}
+QA_DESERT {"cacti":8,"sheet":"img/field-tiles/tileset-cacti.png","weather":"none"}
+QA_PERSIST {"count":50,"companions":[25,1,4],"opened":["robot"],"snow":[25],"robot":[1]}
+QA_RESULT pass

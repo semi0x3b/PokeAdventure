@@ -57,7 +57,7 @@
     wordbook: { lines: ['손가락으로 따라 써 보자!', '회색 글자 위를 따라 써 봐!'], short: ['글자를 써 보자!'], full: 3, quiet: 10 },
     tracePass: { lines: ['{text}', '잘 썼어!', '최고야!', '멋지게 썼어!'], count: false },
     traceRetry: { lines: ['{text}', '한 번 더 써 보자!'], count: false },
-    yard: { lines: ['친구를 누르면 쓰다듬을 수 있어!', '땅을 누르면 친구들이 달려와!'], full: 3, quiet: 3 },
+    yard: { lines: ['친구를 누르면 쓰다듬을 수 있어!', '땅을 누르면 친구들이 달려와!', '라즈베리 버튼으로 먹이를 줄 수 있어!'], full: 3, quiet: 3 },
     // 첫 화면 소개(js/feature-tour.js): 버튼을 하나씩 빛내며 한마디. 소개가 계정마다 한 번(다시 보기는 설정)이라 세지 않는다.
     'tour-stamps': { lines: ['매일 도장 쾅! 다섯 개면 선물!'], count: false },
     'tour-wordbook': { lines: ['글자 쓰면 피카츄 스티커를 받아!'], count: false },

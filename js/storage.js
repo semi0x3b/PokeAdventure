@@ -8,8 +8,13 @@
   const ITERATIONS = 600000;
   const MAX_BACKUP = 256 * 1024;
   const LOCK_MS = 15 * 60 * 1000;
-  const STATE_KEYS = ['caught', 'stamps', 'companion', 'companions', 'yard', 'seen', 'stampRewards', 'wordsWritten', 'wordRewards', 'settings', 'updatedAt', 'preferencesUpdatedAt', 'resetAt'];
+  const STATE_KEYS = ['caught', 'stamps', 'companion', 'companions', 'yard', 'yards', 'yardsOpen', 'seen', 'stampRewards', 'wordsWritten', 'wordRewards', 'settings', 'updatedAt', 'preferencesUpdatedAt', 'resetAt'];
   const SETTINGS_KEYS = ['sound', 'area', 'difficulty', 'readAloud', 'music', 'voiceGuide', 'trainerLook', 'mathMax', 'koreanLevel', 'englishLevel'];
+  // js/yard.js THEMES 와 같은 id(풀밭 마당 meadow 는 옛 yard 칸). 열쇠로 여는 마을은 눈의 마을을 뺀 나머지.
+  const YARD_THEMES = ['snow', 'forest', 'sea', 'doll', 'robot', 'car', 'dino', 'sweets', 'cherry', 'space', 'gem', 'desert', 'autumn', 'flower'];
+  const YARD_KEY_THEMES = YARD_THEMES.filter(id => id !== 'snow');
+  // 눈의 마을(10마리) 뒤 10마리마다 마당 열쇠 하나(js/yard.js SNOW_AT·KEY_EVERY 와 같은 값).
+  function yardKeys(caughtCount) { return Math.max(0, Math.floor((caughtCount - 10) / 10)); }
   const SEEN = ['toured', 'stamps', 'wordbook', 'yard', 'settings'];
   let user = null;
   let state = emptyState();
@@ -67,10 +72,25 @@
     check(Array.isArray(result.stamps) && result.stamps.length <= 15000 && result.stamps.every(date) && new Set(result.stamps).size === result.stamps.length, '출석 기록이 올바르지 않아요.');
     result.stamps = [...result.stamps].sort();
     if (!Object.hasOwn(value, 'companions')) result.companions = result.companion ? [result.companion] : [];
-    result.companions = idList(result.companions, 2, '동행');
+    result.companions = idList(result.companions, root.GameRules.companionCapacity(result.caught), '동행');
     check(result.companion === (result.companions[0] ?? null) && result.companions.every(id => result.caught.includes(id)), '잡은 포켓몬 중에서 동행을 다시 골라 주세요.');
     result.yard = idList(result.yard, 10, '마당');
     check(result.yard.every(id => result.caught.includes(id)), '잡은 포켓몬만 마당에 둘 수 있어요.');
+    // 기본 풀밭 마당 말고 다른 마당(눈의 마을 등)의 친구 목록. 마당마다 10마리.
+    // 다른 마당을 한 번도 고르지 않았으면 yards 를 저장하지 않는다(이 필드를 모르는 옛 앱 탭도 기록을 읽게).
+    if (result.yards === undefined) delete result.yards;
+    else {
+      check(object(result.yards) && Object.keys(result.yards).every(key => YARD_THEMES.includes(key)), '마당 기록이 올바르지 않아요.');
+      result.yards = Object.fromEntries(Object.entries(result.yards).map(([key, ids]) => [key, idList(ids, 10, '마당')]));
+      check(Object.values(result.yards).every(ids => ids.every(id => result.caught.includes(id))), '잡은 포켓몬만 마당에 둘 수 있어요.');
+    }
+    // 열쇠로 연 마을. 받은 열쇠 수보다 많을 수 없다(백업은 거절, 다른 탭과 합친 기록은 앞에서부터 자른다).
+    if (result.yardsOpen === undefined) delete result.yardsOpen;
+    else {
+      check(Array.isArray(result.yardsOpen) && result.yardsOpen.every(id => YARD_KEY_THEMES.includes(id)) && new Set(result.yardsOpen).size === result.yardsOpen.length, '마을 기록이 올바르지 않아요.');
+      if (strict) check(result.yardsOpen.length <= yardKeys(result.caught.length), '마을 기록이 올바르지 않아요.');
+      result.yardsOpen = result.yardsOpen.slice(0, yardKeys(result.caught.length));
+    }
     check(Array.isArray(result.seen) && result.seen.length <= SEEN.length && result.seen.every(name => SEEN.includes(name)) && new Set(result.seen).size === result.seen.length, '안내 기록이 올바르지 않아요.');
     result.seen = [...result.seen].sort();
     check(integer(result.stampRewards, 3000) && integer(result.wordsWritten, 100000) && integer(result.wordRewards, 20000), '선물 보상 기록이 올바르지 않아요.');
@@ -282,7 +302,7 @@
     try { backup = JSON.parse(raw); } catch { throw new Error('백업 파일을 읽지 못했어요. JSON 파일을 골라 주세요.'); }
     safeTree(backup); limitedKeys(backup, ['format', 'version', 'exportedAt', 'state']);
     check(backup.format === 'poke-adventure-device-backup' && backup.version === VERSION && time(backup.exportedAt), '백업 파일 버전과 날짜를 확인해 주세요.');
-    check(object(backup.state) && STATE_KEYS.every(key=>Object.hasOwn(backup.state,key)), '백업에 필요한 진행 기록이 빠져 있어요. 원래 백업 파일을 골라 주세요.');
+    check(object(backup.state) && STATE_KEYS.every(key=>key==='yards'||key==='yardsOpen'||Object.hasOwn(backup.state,key)), '백업에 필요한 진행 기록이 빠져 있어요. 원래 백업 파일을 골라 주세요.');
     const next = validatedState(backup.state), latest = freshRecord();
     next.resetAt = Math.max(Date.now(), state.resetAt + 1, latest.state.resetAt + 1); next.updatedAt = next.resetAt; next.preferencesUpdatedAt = next.resetAt;
     save(nextRecord(latest, { state: next }));
@@ -306,5 +326,7 @@
   root.addEventListener('online', () => { void refresh().catch(() => {}); });
   root.addEventListener('pagehide', () => { if (user && pending) void sync().catch(() => {}); });
   root.GameStorage = { init, authenticate, update, sync, refresh, logout, reset, exportBackup, importBackup,
+    // 잠금 해제 없이 로그인 폼에 쓸 별명만 읽는다. 인증 정보와 진행 기록은 노출하지 않는다.
+    get loginName() { return record?.user.name || ''; },
     get user() { return user; }, get state() { return state; }, get status() { return status; }, get pending() { return pending; }, get needsLogin() { return !user; }, get hasAccount() { return Boolean(record) || damaged; } };
 })(window);

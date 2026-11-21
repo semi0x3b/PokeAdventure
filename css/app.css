@@ -168,7 +168,7 @@ noscript { display: block; padding: var(--gap-l); font-size: var(--fs-l); }
 .corner-pill .ui-icon { --icon-size: 28px; }
 body[data-screen="title"] .home-button { visibility: hidden; }
 body:not([data-screen="field"]) .dex-button { display: none; }
-body:not([data-screen="dex"]) .topbar .map-button { display: none; }
+body:not([data-screen="dex"]):not([data-screen="yard"]):not([data-screen="yards"]) .topbar .map-button { display: none; }
 body[data-screen="battle"] .topbar { display: none; }
 /* 필드도 도감·가방·설정을 한 줄에 둔다. 다른 화면처럼 설정은 맨 오른쪽이다. */
 body[data-screen="field"] .top-actions--end { display: flex; flex-wrap: nowrap; }

@@ -1,0 +1,31 @@
+선인장 타일 원본: Kenney Roguelike/RPG pack (Kenney Vleugels, Lynn Evers), CC0.
+공식 출처: https://kenney.nl/assets/roguelike-rpg-pack
+받은 곳: https://raw.githubusercontent.com/bill2432/kenney-2d-mirror/main/packs/roguelike-rpg-pack.zip
+원본 경로: Spritesheet/roguelikeSheet_transparent.png → tileset-cacti.png (원본 그대로).
+ZIP SHA-256: 8e7d2378f8f794245645f6d7dc7aeeb246791410a7e512293c594b46a5a9524b
+타일 간격 1px, 각 타일 16×16px. 팔 달린 선인장 [374,153,16,16], 토끼귀 선인장 [442,153,16,16].
+아래는 배포 묶음 License.txt 원문이다.
+
+
+###############################################################################
+
+
+	Roguelike pack
+	by Kenney Vleugels for Kenney (www.kenney.nl)
+	with help by Lynn Evers (Twitter: @EversLynn)
+
+			------------------------------
+
+	License (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	You may use these graphics in personal and commercial projects.
+	Credit (Kenney or www.kenney.nl) would be nice but is not mandatory.
+
+			------------------------------
+
+	Donate:   http://donate.kenney.nl/
+	Request:  http://request.kenney.nl/
+
+
+###############################################################################

@@ -1,0 +1,14 @@
+Use your built-in image generation tool (image_gen) to make ONE image, then copy the generated PNG file to /tmp/props/forest.png. Do not write code to draw it; it must come from image generation. Generate once only.
+
+Image spec:
+- Pixel-art sprite sheet for a cute children's game, matching EXACTLY the art style of the attached reference sheet (Ninja Adventure 16px top-down RPG tileset): chunky pixels, 1-pixel dark plum outline (#2b1d2e), soft flat shading with 2-3 tones per color, warm friendly palette, no gradients, no anti-aliasing, no text, nothing scary.
+- Canvas 1536x1024, solid flat pure magenta background (#FF00FF) everywhere outside the sprites (no ground, no shadows, no frames, no grid lines).
+- 3 columns x 2 rows of equal cells (each 512x512). One object centered in each cell, filling about 70% of the cell.
+- Every object is drawn on a 32x32 pixel grid (so each art pixel is a 16x16 block of identical color). Viewed from the same 3/4 top-down angle as the reference trees and rocks.
+- Cells, left to right, top to bottom:
+  1. a red mushroom with white spots
+  2. a cute hedgehog
+  3. a cute squirrel holding a nut
+  4. an acorn
+  5. a short fallen log
+  6. a round little owl

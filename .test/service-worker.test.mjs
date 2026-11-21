@@ -22,7 +22,7 @@ test('받은 그림이 많아도 별도 미디어 캐시가 화면·잠금 코�
  w.scope.fetch=async()=>new Response('image');
  for(let n=0;n<105;n++){let response;w.handlers.get('fetch')({request:{url:'https://game.example/img/'+n+'.png',method:'GET',mode:'cors'},respondWith(p){response=p;}});await response;}
  assert.ok(await(await w.caches.open('poke-adventure-shell-test')).match('/index.html'));
- assert.equal((await(await w.caches.open('poke-adventure-media-v2')).keys()).length,100);
+ assert.equal((await(await w.caches.open('poke-adventure-assets-test')).keys()).length,100);
 });
 
 test('캐시 저장 공간이 부족해도 정상으로 받은 외부 그림 응답을 반환한다',async()=>{

@@ -22,6 +22,7 @@
   let previousTime = 0;
   let wordbookSession = null;
   let yardSession = null;
+  let yardTheme = 'meadow';
   let answerMotionId = 0;
   let lastCaughtId = null;
   let partySlot = 0;
@@ -41,18 +42,18 @@
   }
   function partyIds() {
     const stored = Array.isArray(S.state.companions) ? S.state.companions : (S.state.companion ? [S.state.companion] : []);
-    return [...new Set(stored)].filter(id => S.state.caught.includes(id)).slice(0,2);
+    return [...new Set(stored)].filter(id => S.state.caught.includes(id)).slice(0, R.companionCapacity(S.state.caught));
   }
   function chooseParty(ids) {
-    const companions = [...new Set(ids)].slice(0,2);
+    const companions = [...new Set(ids)].filter(id => S.state.caught.includes(id)).slice(0, R.companionCapacity(S.state.caught));
     S.update({ companions, companion: companions[0] || null }, true);
   }
-  // 도감 위쪽 「모험 파트너」 두 칸. 칸을 누르면 잡은 포켓몬 고르기 창이 열린다. 1번 칸이 배틀에 나가는 대표, 2번 칸이 필드 동행이다.
-  const PARTY_ROLES = ['대표', '동행'];
+  // 1번 칸이 배틀에 나가는 대표. 50마리를 잡으면 세 번째 필드 동행 칸이 열린다.
+  const PARTY_ROLES = ['대표', '동행', '동행'];
   function partyPanel() {
     if (!S.state.caught.length) return '<section class="party-panel"><p class="party-hint">포켓몬을 잡아 보자!</p></section>';
     const ids = partyIds();
-    const slots = PARTY_ROLES.map((role, slot) => {
+    const slots = PARTY_ROLES.slice(0, R.companionCapacity(S.state.caught)).map((role, slot) => {
       const pokemon = POKEMON.find(p => p.id === ids[slot]);
       const body = pokemon
         ? `<img src="${pokemonImage(pokemon, true)}" alt=""><strong>${escape(pokemon.name)}</strong>`
@@ -62,13 +63,13 @@
     }).join('');
     return `<section class="party-panel" aria-label="모험 파트너"><div class="party-slots">${slots}</div></section>`;
   }
-  // 필드 「가방」: 같이 다닐 친구 두 칸만 보여 주고, 칸을 누르면 도감과 같은 고르기 창(partyPicker)으로 바꾼다(2026-11-13 사용자).
+  // 필드 「가방」: 열린 동행 칸을 보여 주고, 칸을 누르면 도감과 같은 고르기 창(partyPicker)으로 바꾼다.
   // 여는 곳은 오른쪽 위 「가방」 버튼(index.html #bag-button, 2026-11-14 — 트레이너 누르기에서 다시 버튼으로).
   function bagModal() {
     if (!S.state.caught.length) return;
     bagOpen = true;
     const ids = partyIds();
-    const slots = PARTY_ROLES.map((role, slot) => {
+    const slots = PARTY_ROLES.slice(0, R.companionCapacity(S.state.caught)).map((role, slot) => {
       const pokemon = POKEMON.find(p => p.id === ids[slot]);
       const body = pokemon
         ? `<img src="${modelImagePath(pokemon.id)}" alt=""><strong>${escape(pokemon.name)}</strong>`
@@ -79,6 +80,7 @@
     window.VoiceGuide?.say('bagOpen');
   }
   function partyPicker(slot) {
+    if (!Number.isInteger(slot) || slot < 0 || slot >= R.companionCapacity(S.state.caught)) return;
     const caught = POKEMON.filter(p => S.state.caught.includes(p.id));
     if (!caught.length) return;
     partySlot = slot;
@@ -102,14 +104,16 @@
     cry(id);
   }
   function setPartner(slot, id) {
+    if (!Number.isInteger(slot) || slot < 0 || slot >= R.companionCapacity(S.state.caught) || !S.state.caught.includes(id)) return;
     const ids = partyIds();
-    // 다른 칸에 있던 포켓몬을 고르면 두 칸을 맞바꾼다. 빈 1번 칸 뒤의 2번 칸은 앞으로 당겨진다.
-    const other = 1 - slot;
-    if (ids[other] === id) ids[other] = ids[slot];
+    // 다른 칸에 있던 포켓몬을 고르면 맞바꾼다. 비어 있는 칸은 앞으로 당긴다.
+    const other = ids.indexOf(id);
+    if (other >= 0 && other !== slot) ids[other] = ids[slot];
     ids[slot] = id;
     chooseParty(ids.filter(Boolean));
   }
   function clearPartner(slot) {
+    if (!Number.isInteger(slot) || slot < 0 || slot >= R.companionCapacity(S.state.caught)) return;
     const ids = partyIds();
     ids.splice(slot, 1);
     chooseParty(ids);
@@ -261,6 +265,7 @@
     render();
     musicForScreen();
     window.scrollTo({ top: 0, behavior: 'instant' });
+    if (yardUnlocks.length) setTimeout(yardUnlockCard, 900);
   }
   // 처음부터 다시 하기가 장면 전환 도중에 오면 덮는 중이던 이동은 버린다(전환 뒤에는 처음 화면이 그대로 드러난다).
   let travelEpoch = 0;
@@ -431,6 +436,7 @@
     document.querySelector('.gift-scene')?.remove();
     if (partyGuideDue()) { returnScreen = screen; setScreen('partyGuide'); return; }
     if (screen === 'title') title();
+    if (yardUnlocks.length) setTimeout(yardUnlockCard, 600);
   }
   function regions() {
     const starters = { forest: 1, city: 25, desert: 4, sea: 7 };
@@ -608,12 +614,13 @@
     const map = fieldMap();
     const gate = from ? FieldWorld.exitTo(map, from) : null;
     const start = gate ? gate.arrival : map.start;
-    // 동행 두 마리가 처음부터 트레이너 옆에 줄지어 서도록 옆으로 걸어온 길(4칸)을 깔아 둔다(왼쪽 먼저, 막혔으면 오른쪽).
+    // 동행이 처음부터 트레이너 옆에 줄지어 서도록 열린 칸 수에 맞춰 걸어온 길을 깔아 둔다.
     // 아래쪽·아치 안쪽 길로 깔면 동행이 트레이너 머리 위나 발 위로 겹쳐 서고 말풍선·가방 그림에 가렸다(2026-11-14 플레이테스트).
     // 출구 도착도 같다 — 출구 앞 칸은 길 한 칸 폭이라 위아래는 아치지만 옆은 열려 있다.
-    const lineOpen = side => [1, 2, 3, 4].every(step => FieldWorld.isWalkable(map, { x: start.x + side * step / FieldWorld.SIZE, y: start.y }));
+    const trailTiles = R.companionCapacity(S.state.caught) * 2;
+    const lineOpen = side => Array.from({ length: trailTiles }, (_, index) => index + 1).every(step => FieldWorld.isWalkable(map, { x: start.x + side * step / FieldWorld.SIZE, y: start.y }));
     const lineSide = lineOpen(-1) || !lineOpen(1) ? -1 : 1;
-    const trail = { x: start.x + lineSide * 4 / FieldWorld.SIZE, y: start.y };
+    const trail = { x: start.x + lineSide * trailTiles / FieldWorld.SIZE, y: start.y };
     field = {
       player: { x: start.x, y: start.y, direction: gate?.arrival.direction || 'front' }, camera: { x: 0, y: 0 },
       target: null, chase: null, drag: null, marker: null, moving: false, stuck: 0, time: 0, cooldown: 0,
@@ -795,7 +802,7 @@
     // 배틀에서 돌아왔을 때(새로 들어온 필드는 첫 말풍선 때 field-enter 안내).
     if (!field.intro) window.VoiceGuide?.say('fieldReturn');
     field.intro = false;
-    main.innerHTML = `<section class="field-screen" data-region="${region}"${intro}><div class="field-wrap"><canvas id="field-canvas" class="field-canvas" tabindex="0" aria-label="${R.REGIONS[region].name} 지도. 누르거나 누른 채 움직이면 그쪽으로 걸어가고, 몬스터볼에 닿으면 포켓몬을 만나요. 위아래 끝의 돌 아치로 가면 다른 지역으로 가요."></canvas>${ambient.world}${balls}<span id="field-companion" class="field-companion" role="img" aria-label="대표 포켓몬" hidden></span><span id="field-companion-2" class="field-companion" role="img" aria-label="두 번째 동행 포켓몬" hidden></span><canvas id="field-actor" class="field-actor" aria-hidden="true"></canvas><canvas id="field-over" class="field-over" aria-hidden="true"></canvas>${exitNames}${ambient.weather}<p class="field-say" role="status" hidden></p><span class="field-alert" aria-hidden="true" hidden><img src="img/yard/emote-exclaim.png" alt="" draggable="false"></span></div><p class="field-place">${R.REGIONS[region].name}</p><div class="field-mini" aria-hidden="true"><canvas class="field-mini-map"></canvas><canvas class="field-mini-dots"></canvas></div><span class="field-safe-probe" aria-hidden="true"></span></section>`;
+    main.innerHTML = `<section class="field-screen" data-region="${region}"${intro}><div class="field-wrap"><canvas id="field-canvas" class="field-canvas" tabindex="0" aria-label="${R.REGIONS[region].name} 지도. 누르거나 누른 채 움직이면 그쪽으로 걸어가고, 몬스터볼에 닿으면 포켓몬을 만나요. 위아래 끝의 돌 아치로 가면 다른 지역으로 가요."></canvas>${ambient.world}${balls}<span id="field-companion" class="field-companion" role="img" aria-label="대표 포켓몬" hidden></span><span id="field-companion-2" class="field-companion" role="img" aria-label="두 번째 동행 포켓몬" hidden></span>${R.companionCapacity(S.state.caught) > 2 ? '<span id="field-companion-3" class="field-companion" role="img" aria-label="세 번째 동행 포켓몬" hidden></span>' : ''}<canvas id="field-actor" class="field-actor" aria-hidden="true"></canvas><canvas id="field-over" class="field-over" aria-hidden="true"></canvas>${exitNames}${ambient.weather}<p class="field-say" role="status" hidden></p><span class="field-alert" aria-hidden="true" hidden><img src="img/yard/emote-exclaim.png" alt="" draggable="false"></span></div><p class="field-place">${R.REGIONS[region].name}</p><div class="field-mini" aria-hidden="true"><canvas class="field-mini-map"></canvas><canvas class="field-mini-dots"></canvas></div><span class="field-safe-probe" aria-hidden="true"></span></section>`;
     const canvas = main.querySelector('#field-canvas');
     const screenNode = main.querySelector('.field-screen');
     miniDrawn = '';
@@ -996,6 +1003,7 @@
     return Narration.read({ ...question, prompt: window.PokemonText ? PokemonText.questionPrompt(question.prompt, question.area) : question.prompt }, { repeat, enabled: soundOn() });
   }
   function countingPicture({ left, right, minus, versus, split }) {
+    if (split) return LearningArt.splittingHtml({ left, right }, currentQuestion());
     // 식의 왼쪽 수는 왼쪽에, 오른쪽 수는 오른쪽에 그린다(낱개 그림은 countingArt). 10개는 한 묶음(다섯 개씩 두 줄 상자), 나머지는 낱개다.
     // 빼기도 흐리게 하지 않는다. 낱개 크기(--ball)는 그린 뒤 fitCounting 이 팝업 그림 칸에 맞춘다.
     // versus: 크기 비교라 두 무더기 사이에 +·− 대신 빈 간격만 둔다.
@@ -1065,7 +1073,7 @@
     // 먹이 주기의 마음 막대(.gb-hp--heart)도 같은 방식으로 차오른다. 공격 → 마음으로 바뀌는 순간은 막대 이름이 달라 움직이지 않는다.
     const previousHeart = Number(document.querySelector('.gb-hp--heart')?.getAttribute?.('aria-valuenow'));
     main.innerHTML = BattleView.render({
-      battle, region, heading, controls, artwork, questionId, trace, popup, choosing, area,
+      battle, region, heading, controls, artwork, questionId, trace, popup, choosing, area, soundEnabled: soundOn(),
       hint: popup ? battleHint : '', stay: options.stay === true, scene: options.scene === true, revealing: options.revealing === true,
       camera: battleCamera, userName: S.user?.name || '트레이너', ambient: window.AmbientScene?.html(region) || '',
       companion: companionPokemon ? {id:companionId,name:companionPokemon.name,backUrl:modelImagePath(companionId, true)} : null
@@ -1328,8 +1336,10 @@
     }
     const last = battle.phase === 'question' && battle.index === battle.total - 1;
     battleScreen({ scene: true, hpDelay: HP_IMPACT_MS });
-    battleSpeech(feeding || trainerAlone() ? battleLine('befriend', battle.pokemon.name) : battleLine(last ? 'lastQuestion' : 'correct'), 'correct');
-    await (window.AdventureMotion?.feedback('correct', guard, { feed: feeding }) || pause(1500, guard));
+    const reaction = battle.phase === 'capture' ? battleLine('captureReady')
+      : feeding || trainerAlone() ? battleLine('befriend', battle.pokemon.name) : battleLine(last ? 'lastQuestion' : 'correct');
+    const speech = battleSpeech(reaction, 'correct', { wait: true, guard });
+    await Promise.all([window.AdventureMotion?.feedback('correct', guard, { feed: feeding }) || pause(1500, guard), speech]);
     if (!guard()) return;
     busy = false;
     // 마지막 문제까지 맞히면 버튼 없이 바로 던진다.
@@ -1389,15 +1399,35 @@
     backToField();
   }
   let battleSpeechTimer;
-  function battleSpeech(message,kind) {
+  async function readBattleLine(message, guard) {
+    while (!guard || guard()) {
+      // 설정 창에서 끊긴 대사는 창을 닫은 뒤 처음부터 다시 읽는다.
+      if (modalRoot.firstChild) {
+        if (!await pause(100, guard || (() => true), true)) return false;
+        continue;
+      }
+      const finished = await window.Narration.readAndWait({ id: 'battle-line-' + message, prompt: message, options: [] }, { repeat: true, enabled: soundOn() });
+      if (guard && !guard()) return false;
+      if (finished || !modalRoot.firstChild) return finished;
+    }
+    return false;
+  }
+  function battleSpeech(message,kind, options = {}) {
     let bubble = document.querySelector('#battle-speech');
     if (!bubble) { bubble = document.createElement('div'); bubble.id = 'battle-speech'; bubble.setAttribute('role','status'); document.body.appendChild(bubble); }
     // 팝업이 닫힌 장면(정답 공격·피격·던지기)의 멘트는 화면 위에서 1/4 지점, 팝업이 열려 있으면 팝업 위 띠(가리지 않게).
     bubble.className = 'gb-speech ' + kind + (battlePopup ? '' : ' gb-speech--scene');
     bubble.textContent = message;
     clearTimeout(battleSpeechTimer);
+    if (options.wait && soundOn() && window.Narration?.readAndWait) {
+      window.VoiceGuide?.cancel();
+      return readBattleLine(message, options.guard).finally(() => {
+        if (bubble.textContent === message) battleSpeechTimer = setTimeout(() => bubble.remove(), 250);
+      });
+    }
     battleSpeechTimer = setTimeout(() => bubble.remove(), 2200);
-    window.VoiceGuide?.say('battle', { text: message, guard: () => !modalRoot.firstChild });
+    window.VoiceGuide?.say('battle', { text: message, guard: () => !modalRoot.firstChild && (!options.guard || options.guard()) });
+    return Promise.resolve(false);
   }
   // 가로세로가 바뀌면 열린 팝업을 새 크기로 다시 그린다(높이만 바뀌는 사파리 도구막대 변화에는 그림 크기만 맞춘다).
   let battleViewportWidth = window.innerWidth, battleResizeTimer;
@@ -1416,15 +1446,17 @@
     if (busy || battle.phase !== 'capture') return;
     const captureBattle = battle;
     const captureOwner = S.user?.name;
-    answerMotionId++;
+    const captureId = ++answerMotionId;
     window.AdventureMotion?.cancel();
     busy = true;
+    const guard = () => battle === captureBattle && screen === 'battle' && S.user?.name === captureOwner && answerMotionId === captureId;
+    battleScreen({ scene: true });
+    document.querySelector('#battle-speech')?.remove();
+    await battleSpeech(battleLine('throw'), 'correct', { wait: true, guard });
+    if (!guard()) return;
     battle.phase = 'throwing';
     battleScreen();
-    document.querySelector('#battle-speech')?.remove();
-    battleSpeech(battleLine('throw'), 'correct');
     sound('throw');
-    const guard = () => battle === captureBattle && S.user?.name === captureOwner;
     // 카메라가 볼을 따라 상대 쪽으로 당겨진다: 회전하며 포물선 → 하얗게 빛나며 빨려 들어감(빛·고리) → 떨어져 쿵 →
     // 흔들림 3번(사이 정적) → 찰칵(톡) → 금빛 고리와 별이 촤라라. 2026-11-13 「2배 느리게」로 7초 → 9.6초.
     // 박자 길이는 css/battle-view.css 의 data-capture-beat 애니메이션과 맞춘다. 효과는 AdventureMotion.burst.
@@ -1447,7 +1479,8 @@
     if (!done) { busy=false;battle.phase='capture';battleCamera='wide';if(screen==='battle')battleScreen();return; }
     const caught = [...new Set([...S.state.caught, battle.pokemon.id])];
     const companions = partyIds();
-    const partyChanged = companions.length < 2 && !companions.includes(battle.pokemon.id);
+    const unlockedCompanion = R.companionCapacity(caught) > R.companionCapacity(S.state.caught);
+    const partyChanged = companions.length < R.companionCapacity(caught) && !companions.includes(battle.pokemon.id);
     if (partyChanged) companions.push(battle.pokemon.id);
     S.update({ caught, companions, companion: companions[0] || null }, partyChanged);
     lastCaughtId = captureBattle.pokemon.id;
@@ -1476,6 +1509,7 @@
     void document.querySelector('.go-battle')?.offsetWidth;
     setCamera('wide');
     window.VoiceGuide?.say('caught', { text: battleCallout, guard: () => guard() && screen === 'battle' && battle.phase === 'caught' && !modalRoot.firstChild });
+    if (unlockedCompanion) toast('50마리를 잡았어요! 이제 친구 세 마리와 같이 다닐 수 있어요!');
   }
   function dexScreen(animate = true) {
     const normalGen = R.generation(POKEMON, S.state.caught, false);
@@ -1592,18 +1626,28 @@
     const submitLabel = () => icon('play') + (register ? '내 수첩 만들기' : '모험 이어 하기');
     const padKeys = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(digit => `<button type="button" data-pin-key="${digit}">${digit}</button>`).join('')
       + `<button type="button" class="pin-erase" data-pin-key="erase" aria-label="한 글자 지우기">${icon('eraser')}</button><button type="button" class="pin-zero" data-pin-key="0">0</button>`;
-    showModal('<h2 id="modal-title">나의 모험 수첩</h2>', `<form id="auth-form" class="auth-form"><div class="toggle-group login-tabs"><button type="button" data-action="auth-login" class="${register ? '' : 'active'}" aria-pressed="${!register}">${icon('trainer')}로그인</button><button type="button" data-action="auth-register" class="${register ? 'active' : ''}" aria-pressed="${register}">${icon('star')}처음 왔어요</button></div><label class="form-field">이름<input name="name" required minlength="2" maxlength="16" autocomplete="username" placeholder="예: 별이탐험가"></label><div class="form-field pin-field"><label for="auth-pin">숫자 4자리 비밀번호</label><input id="auth-pin" class="pin-input" name="pin" type="password" inputmode="none" pattern="[0-9]{4}" maxlength="4" required autocomplete="${register ? 'new-password' : 'current-password'}"><span class="pin-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div><div class="pin-pad" role="group" aria-label="비밀번호 숫자판">${padKeys}</div><p class="form-help">부모님이 처음 한 번 비밀번호를 정해 주세요. 기록은 이 기기에만 저장되며 비밀번호는 아이에게 알려주지 마세요.</p><div class="form-error" id="auth-error" role="alert"></div><button class="button full" type="submit" disabled>${submitLabel()}</button></form>`, 'modal--form');
+    showModal('<h2 id="modal-title">나의 모험 수첩</h2>', `<form id="auth-form" class="auth-form"><div class="toggle-group login-tabs"><button type="button" data-action="auth-login" class="${register ? '' : 'active'}" aria-pressed="${!register}">${icon('trainer')}로그인</button><button type="button" data-action="auth-register" class="${register ? 'active' : ''}" aria-pressed="${register}">${icon('star')}처음 왔어요</button></div><label class="form-field">이름<input name="name" required minlength="2" maxlength="16" autocomplete="username" placeholder="예: 별이탐험가"></label><label class="auth-remember"><input type="checkbox" name="rememberName" checked>이름 기억하기</label><div class="form-field pin-field"><label for="auth-pin">숫자 4자리 비밀번호</label><input id="auth-pin" class="pin-input" name="pin" type="password" inputmode="none" pattern="[0-9]{4}" maxlength="4" required autocomplete="${register ? 'new-password' : 'current-password'}"><span class="pin-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div><div class="pin-pad" role="group" aria-label="비밀번호 숫자판">${padKeys}</div><p class="form-help">부모님이 처음 한 번 비밀번호를 정해 주세요. 기록은 이 기기에만 저장되며 비밀번호는 아이에게 알려주지 마세요.</p><div class="form-error" id="auth-error" role="alert"></div><button class="button full" type="submit" disabled>${submitLabel()}</button></form>`, 'modal--form');
     window.VoiceGuide?.say('auth');
     modalRoot.authNext = next;
     const form = modalRoot.querySelector('#auth-form');
     form.querySelector('.login-tabs')?.remove();
     const pin = form.elements.pin;
+    const rememberKey = 'poke-adventure:remember-parent-name:v1';
+    const rememberName = form.elements.rememberName;
+    rememberName.checked = readLocal(rememberKey) !== 'false';
+    form.elements.name.value = !register && rememberName.checked ? (S.loginName || '') : '';
+    form.elements.name.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      pin.focus();
+    });
     const submit = form.querySelector('[type=submit]');
     const refresh = () => {
       pin.value = pin.value.replace(/\D/g, '').slice(0, 4);
       form.querySelectorAll('.pin-dots i').forEach((dot, index) => dot.classList.toggle('on', index < pin.value.length));
       submit.disabled = form.elements.name.value.trim().length < 2 || pin.value.length !== 4;
     };
+    refresh();
     form.addEventListener('input', refresh);
     form.querySelector('.pin-pad').addEventListener('click', event => {
       const key = event.target.closest('[data-pin-key]')?.dataset.pinKey;
@@ -1620,7 +1664,10 @@
         const previousAccount = S.user?.name;
         await S.authenticate(register ? 'register' : 'login', form.elements.name.value.trim(), pin.value);
         if (!form.isConnected || document.hidden) { await S.logout(); return; }
+        if (rememberName.checked) removeLocal(rememberKey);
+        else writeLocal(rememberKey, 'false');
         sessionLocked = false;
+        lastTouch = Date.now();
         pin.value = '';
         closeModal();
         if(previousAccount && previousAccount !== S.user?.name) { battle=null; field=null; usedQuestions=[]; setScreen('regions'); return; }
@@ -1845,6 +1892,7 @@
       // 통과·다시 쓰기: 말풍선 글을 소리로도(한글이 아닌 GOOD! 등은 음성 안내가 고른 칭찬으로).
       onFeedback:kind=>{sound(kind==='wrong'?'wrong':'correct');window.VoiceGuide?.say(kind==='wrong'?'traceRetry':'tracePass',{text:main.querySelector('.wordbook-bubble')?.textContent||''});},
       onRead:text=>window.Narration?.read({id:'wordbook-'+text,prompt:text,options:[]},{repeat:true,enabled:soundOn()}),
+      canRead:()=>screen==='wordbook'&&!modalRoot.firstChild&&!document.hidden&&!document.querySelector('.gift-scene')&&!document.querySelector('.feature-tour'),
       onPass:wordPassed,
       giftProgress:wordGiftProgress,
       owner:S.user?.name||null
@@ -1853,9 +1901,59 @@
     window.VoiceGuide?.say('wordbook');
   }
   // 내 마당(js/yard.js): 잡은 포켓몬을 10마리까지 풀어 두고 노는 화면. 입구는 타이틀 메뉴 하나다.
+  // 마을 고르기(YardScene.mountList): 3열 타일에서 마을 하나를 고르면 그 마당(yardTheme)으로 간다. 열쇠가 있으면 잠긴 마을을 골라 연다.
+  function yardsScreen() {
+    yardSession?.destroy();
+    yardSession = YardScene.mountList(main, {
+      storage: S, sound,
+      read: text => readAloud('yard-list-' + text, text),
+      onPick: id => { yardTheme = id; void travelTo('yard', 'travel', YardScene.themeName(id)); },
+      confirmOpen: (id, open) => {
+        const name = YardScene.themeName(id);
+        showModal(`<h2 id="modal-title" class="yard-confirm-title"><i class="yard-key-art" aria-hidden="true"></i>${escape(name)}을 열까?</h2>`, `<div class="yard-confirm"><i class="yard-confirm-art" aria-hidden="true" style="background-image:url('${YardScene.propSheet(id)}')"></i><p>열쇠 하나로 열 수 있어요.</p><div class="yard-confirm-actions"><button class="button" type="button" data-yard-confirm="open">열기!</button><button class="button secondary" type="button" data-yard-confirm="back">다른 마을 볼래</button></div></div>`, 'yard-confirm-modal');
+        readAloud('yard-confirm-' + id, name + '을 열까?');
+        modalRoot.querySelector('[data-yard-confirm="open"]')?.addEventListener('click', () => { closeModal(); open(); });
+        modalRoot.querySelector('[data-yard-confirm="back"]')?.addEventListener('click', () => closeModal());
+      },
+      celebrate: () => { jingle('gift'); }
+    });
+  }
+  // 마을이 열렸다는 축하 카드(2026-11-19 「1번 축하카드 좋다」): 잡은 수가 눈의 마을(10마리)·열쇠(그 뒤 10마리마다)를 넘으면
+  // 배틀·튜토리얼·친구 카드가 끝난 다음 화면에서 한 번 띄운다. 이번에 수첩을 연 뒤 늘어난 수만 본다(다시 열면 또 띄우지 않는다).
+  let yardCaughtSeen = null;
+  const yardUnlocks = [];
+  function noteYardUnlocks() {
+    if (!S.user || !window.YardScene) { yardCaughtSeen = null; yardUnlocks.length = 0; return; }
+    const count = S.state.caught.length;
+    if (yardCaughtSeen !== null && count > yardCaughtSeen) yardUnlocks.push(...YardScene.unlocksBetween(yardCaughtSeen, count));
+    yardCaughtSeen = count;
+  }
+  function yardUnlockCard() {
+    if (!yardUnlocks.length || !S.user || sessionLocked) return;
+    if (['battle', 'tutorial', 'partyGuide', 'levelGuide'].includes(screen)) return;
+    // 장면 전환·다른 창·선물 장면이 끝나면 다시 본다.
+    if (modalRoot.firstChild || document.querySelector('.gift-scene') || window.SceneFX?.active) { setTimeout(yardUnlockCard, 700); return; }
+    // 한꺼번에 여러 개가 열려도(선물 등) 카드는 하나로 모은다.
+    const events = yardUnlocks.splice(0);
+    const event = events.includes('snow') ? 'snow' : 'key';
+    const snow = event === 'snow';
+    const keyCount = events.filter(item => item === 'key').length;
+    const title = snow ? '눈의 마을이 열렸어!' : keyCount > 1 ? `마당 열쇠 ${keyCount}개를 받았어!` : '마당 열쇠를 받았어!';
+    const text = snow ? (keyCount ? '마당 열쇠도 받았어! 내 마당에 가 보자!' : '내 마당에서 눈의 마을에 가 보자!') : '내 마당에서 열고 싶은 마을을 골라 봐!';
+    showModal(`<h2 id="modal-title">${title}</h2>`, `<div class="yard-unlock-card"><i class="yard-unlock-art${snow ? '' : ' yard-key-art'}" aria-hidden="true"${snow ? ` style="background-image:url('${YardScene.propSheet('snow')}')"` : ''}></i><p>${text}</p><div class="yard-confirm-actions"><button class="button" type="button" data-yard-unlock="go">${snow ? '가 보기!' : '고르러 가기!'}</button><button class="button secondary" type="button" data-yard-unlock="later">나중에</button></div></div>`, 'modal--pop yard-unlock-modal');
+    jingle('gift');
+    readAloud('yard-unlock-' + event, title + ' ' + text);
+    modalRoot.querySelector('[data-yard-unlock="go"]')?.addEventListener('click', () => {
+      closeModal();
+      if (snow) { yardTheme = 'snow'; void travelTo('yard', 'travel', '눈의 마을'); }
+      else void travelTo('yards', 'travel', '마을 고르기');
+    });
+    modalRoot.querySelector('[data-yard-unlock="later"]')?.addEventListener('click', () => closeModal());
+  }
   function yardScreen() {
     yardSession?.destroy();
-    yardSession = YardScene.mount(main, { storage: S, cry, sound, showModal, closeModal });
+    if (!YardScene.themeOpen(yardTheme, S.state)) yardTheme = 'meadow';
+    yardSession = YardScene.mount(main, { storage: S, cry, sound, showModal, closeModal, theme: yardTheme });
     window.FeatureTour?.visited('yard');
     window.VoiceGuide?.say('yard');
   }
@@ -1920,7 +2018,7 @@
     // 가입·로그인 창이 닫힌 뒤(다음 화면 지정 없이) 다시 그릴 때도 피카츄를 잡기 전이면 튜토리얼로.
     if (tutorialFirst(screen)) { setScreen('tutorial'); return; }
     updateHeader();
-    ({ title, regions, tutorial:tutorialScreen, partyGuide:partyGuideScreen, levelGuide:levelGuideScreen, field:fieldScreen, battle:battleScreen, dex:() => dexScreen(), wordbook:wordbookScreen, yard:yardScreen }[screen] || title)();
+    ({ title, regions, tutorial:tutorialScreen, partyGuide:partyGuideScreen, levelGuide:levelGuideScreen, field:fieldScreen, battle:battleScreen, dex:() => dexScreen(), wordbook:wordbookScreen, yards:yardsScreen, yard:yardScreen }[screen] || title)();
     if(screen==='dex') highlightNewPokemon();
   }
   function goDex(caughtOnly = false) {
@@ -1939,7 +2037,7 @@
     void travelTo('field', 'travel', line('depart', { place: R.REGIONS[region].name }));
   }
   // 왼쪽 위 몬스터볼: 한 단계 뒤로. 지역 선택에서는 처음 화면, 필드에서는 지역 선택으로 간다.
-  function backTarget() { return { regions: 'title', tutorial: 'title', partyGuide: returnScreen, levelGuide: levelGuideReturn, field: 'regions', dex: returnScreen, wordbook: 'title', yard: 'title' }[screen]; }
+  function backTarget() { return { regions: 'title', tutorial: 'title', partyGuide: returnScreen, levelGuide: levelGuideReturn, field: 'regions', dex: returnScreen, wordbook: 'title', yards: 'title', yard: 'yards' }[screen]; }
   function goBack() {
     if (screen === 'wordbook' && wordbookSession?.back()) return;
     const previous = backTarget();
@@ -2039,7 +2137,7 @@
         if (screen === 'battle') window.VoiceGuide?.cancel();
         settingsModal(); break;
       case 'wordbook': openWordbook(); break;
-      case 'yard': if (S.user) void travelTo('yard','travel','마당으로 가자!'); else authModal(false, () => void travelTo('yard','travel','마당으로 가자!')); break;
+      case 'yard': if (S.user) void travelTo('yards','travel','마당으로 가자!'); else authModal(false, () => void travelTo('yards','travel','마당으로 가자!')); break;
       case 'regions': if (S.user) void travelTo('regions','travel'); else authModal(true, () => void travelTo('regions','travel')); break;
       case 'dex': goDex(); break;
       case 'map': goMap(); break;
@@ -2079,7 +2177,11 @@
         break;
       }
       case 'check-trace': checkTrace(); break;
-      case 'read-question': if (!readBattle(true) && soundOn()) toast('이 브라우저에서는 문제 읽기를 사용할 수 없어요.'); break;
+      case 'read-question':
+        if (screen !== 'battle' || busy || !battlePopup || battleChoosing || !['silhouette', 'question'].includes(battle?.phase)) break;
+        window.VoiceGuide?.cancel();
+        if (!readBattle(true) && soundOn()) toast('이 브라우저에서는 문제 읽기를 사용할 수 없어요.');
+        break;
       case 'logout':
         if (screen === 'battle' && !['caught','fled'].includes(battle.phase)) { toast('친구와의 만남을 끝낸 뒤 로그아웃해 주세요.'); break; }
         try { await S.logout(); resetTitleFor = null; closeModal(); field = null; battle = null; setScreen('title'); }
@@ -2102,6 +2204,7 @@
     image.src = fallback;
   }, true);
   window.addEventListener('savechange', updateHeader);
+  window.addEventListener('savechange', noteYardUnlocks);
   window.addEventListener('savechange', () => { if (!S.user && !sessionLocked) void lockSession(); });
   // 로그인·로그아웃·다른 기기에서 바꾼 캐릭터도 바로 전투 뒷모습에 맞춘다.
   window.addEventListener('savechange', applyTrainerLook);
@@ -2123,6 +2226,7 @@
     return null;
   }
   window.addEventListener('keydown', event => {
+    noteActivity();
     if (event.key === ' ' && !event.repeat && !event.metaKey && !event.ctrlKey && !event.altKey && !/INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) {
       const control = primaryControl();
       // 초점이 다른 버튼에 있어도 그 버튼 대신 메인 버튼을 누른다(브라우저 기본 동작은 막는다).
@@ -2140,8 +2244,17 @@
   });
   window.addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
   window.addEventListener('blur', () => keys.clear());
-  document.addEventListener('visibilitychange', () => { keys.clear(); if (document.hidden) void lockSession(); });
-  window.addEventListener('pagehide', () => { void lockSession(); });
+  // 잠깐 다른 앱으로 옮겨도 유지하고, 30분 무입력일 때 부모 잠금을 다시 건다.
+  // 잠금 해제는 메모리에만 두므로 새로고침·페이지 종료 뒤에는 PIN을 다시 받아야 한다.
+  const IDLE_LOCK_MS = 30 * 60 * 1000;
+  let lastTouch = Date.now();
+  function lockIfIdle() { if (S.user && !sessionLocked && Date.now() - lastTouch >= IDLE_LOCK_MS) void lockSession(); }
+  function noteActivity() { lockIfIdle(); lastTouch = Date.now(); }
+  for (const name of ['pointerdown', 'pointermove', 'touchstart', 'wheel']) document.addEventListener(name, noteActivity, { capture: true, passive: true });
+  window.setInterval?.(lockIfIdle, 30 * 1000);
+  document.addEventListener('visibilitychange', () => { keys.clear(); if (!document.hidden) lockIfIdle(); });
+  // 브라우저 뒤로 가기로 메모리 화면이 복원될 때도 PIN 없이 재진입하지 않는다.
+  window.addEventListener('pageshow', event => { if (event.persisted) void lockSession(); else lockIfIdle(); });
   // 캔버스 크기는 레이아웃 크기(clientWidth)로 잰다. 들어올 때 줌아웃(transform) 중에도 지도 배율이 바뀌지 않게 한다.
   function canvasContext(canvas) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2419,6 +2532,8 @@
   }
   function updateCompanions(dt, view, sizes, margin) {
     const ids = partyIds();
+    const capacity = R.companionCapacity(S.state.caught);
+    field.followers.length = capacity;
     const size = view.size;
     const map = fieldMap();
     const maxStep = trainerSpeed(view) * 1.6 * dt;
@@ -2429,7 +2544,7 @@
     const step = Math.hypot(field.step?.x || 0, field.step?.y || 0);
     const heading = field.moving && step ? { x: field.step.x / step, y: field.step.y / step } : null;
     let trailDistance = 0;
-    for (let slot = 0; slot < 2; slot++) {
+    for (let slot = 0; slot < capacity; slot++) {
       const id = ids[slot];
       if (!id || !window.CompanionView) { field.followers[slot] = null; continue; }
       const shape = companionShape(id, sizes.companion, sizes.tile);
@@ -2444,7 +2559,7 @@
       if (state?.id !== id || far) {
         // 새 동행(방금 잡음·바꿈)은 앞 사람 바로 뒤(보는 쪽 반대)에 나타난다. 걸을 수 없는 곳이면 걸어온 길 위로
         // (2026-11-13 Aside QA: 잡은 뒤 돌아오면 새 동행이 강가 쪽에 따로 서 있었다).
-        const leaderAt = slot === 0 ? field.player : field.followers[0];
+        const leaderAt = slot === 0 ? field.player : field.followers[slot - 1];
         const facing = { front: [0, 1], back: [0, -1], left: [-1, 0], right: [1, 0] }[leaderAt?.direction || field.player.direction] || [0, 1];
         // 띄우는 거리는 발밑 상자가 딱 닿지 않는 끈 길이(가는 축의 reach)보다 조금 더(고정 칸 수로 두면 큰 동행·트레이너 발밑과 닿았다).
         const reach = (facing[0] ? reachX : reachY) * 1.08 / size;
@@ -2706,7 +2821,7 @@
     ctx.restore();
   }
   // 배에 탄 동행(2026-11-14 사용자 「포켓몬들도 같이타야해」): 배 칸 셋 가운데에 트레이너, 트레이너 뒤 칸(뱃머리 반대쪽)에 대표,
-  // 앞 칸에 둘째가 앉는다(동행은 최대 두 마리라 모두 탄다). 앉은 모습은 트레이너처럼 발을 SIT_DOTS 내려 앞 테두리 안쪽에 두고,
+  // 앞 칸에 둘째가, 셋째는 가운데 뒤쪽 열에 앉는다. 앉은 모습은 트레이너처럼 발을 SIT_DOTS 내려 앞 테두리 안쪽에 두고,
   // 배 가운데에서 RIM_DOTS 아래부터는 가린다(seatClip — 발밑 5도트가 앞 테두리에 가려 앉은 것처럼).
   // 옆모습 꼬리(피카츄)·긴 몸(롱스톤)처럼 그림이 넓어 칸 가운데에 앉히면 배 끝(BOAT_HALF.x) 밖으로 나가면 그만큼 안쪽으로 당겨 앉힌다
   // (모든 장면을 합친 그림 테두리 shape.draw 기준. 2026-11-14 필드 동행 493마리 × 배율 2~5 × 방향 4 × 두 칸으로 셈: 당기지 않으면 2.5%가
@@ -2716,17 +2831,21 @@
   const SEAT_DOTS = 16, SIT_DOTS = 10, RIM_DOTS = 5;
   function seatCompanions(sizes) {
     const ids = partyIds();
+    const capacity = R.companionCapacity(S.state.caught);
+    field.followers.length = capacity;
     const boat = field.boat;
     const behind = boat.direction === 'left' ? 1 : -1; // 뒤 칸이 있는 쪽(x 부호)
     const pxPerDot = sizes.tile / FieldWorld.TILE;
-    for (let slot = 0; slot < 2; slot++) {
+    for (let slot = 0; slot < capacity; slot++) {
       const id = ids[slot];
       if (!id || !window.CompanionView) { field.followers[slot] = null; continue; }
       const state = field.followers[slot]?.id === id ? field.followers[slot] : { id };
       const shape = companionShape(id, sizes.companion, sizes.tile);
-      const seat = Math.min(BOAT_HALF.x - shape.draw.right / pxPerDot, Math.max(-BOAT_HALF.x - shape.draw.left / pxPerDot, (slot === 0 ? behind : -behind) * SEAT_DOTS));
+      const seatX = slot === 2 ? 0 : (slot === 0 ? behind : -behind) * SEAT_DOTS;
+      const seatY = slot === 2 ? SIT_DOTS - SEAT_DOTS : SIT_DOTS;
+      const seat = Math.min(BOAT_HALF.x - shape.draw.right / pxPerDot, Math.max(-BOAT_HALF.x - shape.draw.left / pxPerDot, seatX));
       Object.assign(state, {
-        x: boat.x + seat * mapDot(), y: boat.y + SIT_DOTS * mapDot(),
+        x: boat.x + seat * mapDot(), y: boat.y + seatY * mapDot(),
         direction: field.player.direction, moving: false, walk: 0, side: 0, shape,
       });
       field.followers[slot] = state;
@@ -3202,8 +3321,8 @@
     placeBalls(view, sizes, insets, reduced, toScreen);
     placeExitNames(view, toScreen);
     drawMinimap(view, sizes, toScreen(field.player), { x: cameraX / view.size, y: cameraY / view.size });
-    for (let slot = 0; slot < 2; slot++) {
-      const node = document.querySelector(slot === 0 ? '#field-companion' : '#field-companion-2');
+    for (let slot = 0; slot < R.companionCapacity(S.state.caught); slot++) {
+      const node = document.querySelector(slot === 0 ? '#field-companion' : `#field-companion-${slot + 1}`);
       const state = field.followers[slot];
       if (!node) continue;
       if (!state || !window.POKEMON_DETAILS) { node.hidden = true; continue; }

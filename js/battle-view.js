@@ -21,6 +21,7 @@
   const LINES = Object.freeze({
     correct: ['효과가 굉장했다!', '정답! 멋진 공격!', '맞았어! 최고야!', '딩동댕! 정답!', '와! 한 방에 맞혔어!'],
     lastQuestion: ['마지막 문제야!', '하나만 더 맞히자!', '거의 다 왔어!', '이제 한 문제 남았어!'],
+    captureReady: ['좋아! 이제 잡을 수 있어!', '지금이야! 친구로 맞이하자!'],
     firstMiss: ['앗, 아깝다!', '괜찮아, 다시 해 보자!', '음… 다른 걸 골라 볼까?', '조금만 더 생각해 봐!', '힌트를 보고 다시!'],
     hit: [name => `${name}의 공격!`, () => '앗, 맞았다!', () => '으앗! 힘내!', name => `${name}의 반격이다!`, () => '아야! 다시 해 보자!'],
     // 우리 편이 트레이너뿐일 때(튜토리얼 첫 배틀)·먹이 주기: 몸으로 부딪히지 않고 라즈베리를 던져 마음을 연다(2026-11-13 사용자, 그림은 PokeAPI razz-berry).
@@ -143,7 +144,7 @@
     const longAsk = String(input.heading || '').replace(/<br\s*\/?>/gi, '').length > 30;
     const popup = asking ? `<div class="gb-popup${input.stay ? ' is-static' : ''}" role="dialog" aria-modal="true" aria-labelledby="gb-question">` +
       `<div class="gb-card${artwork ? ' has-art' : ''}${input.trace ? ' is-trace' : ''}"><div class="gb-ask">` +
-      `<span class="gb-area">${area ? `<span class="ui-icon icon-${area}" aria-hidden="true"></span>` : '<span class="gb-tag-ball" aria-hidden="true"></span>'}</span>` +
+      `<button class="gb-area gb-read-question" type="button" data-action="read-question" aria-label="문제 다시 듣기"${input.soundEnabled === false ? ' disabled' : ''}><span class="ui-icon icon-sound-on" aria-hidden="true"></span></button>` +
       `<h1 id="gb-question" class="gb-question${longAsk ? ' is-long' : ''}"${input.questionId == null ? '' : ` data-question-id="${escape(input.questionId)}"`}>${text(input.heading)}</h1>` +
       `${artwork ? `<div class="gb-art">${artwork}</div>` : ''}${input.hint ? `<p class="gb-hint" role="status"><span class="ui-icon icon-hint" aria-hidden="true"></span><span>${escape(input.hint)}</span></p>` : ''}</div>` +
       `<div class="gb-choices">${controls}</div></div></div>` : '';

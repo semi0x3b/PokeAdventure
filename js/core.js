@@ -28,6 +28,8 @@
   // 아주 작은 포켓몬(디그다 0.2m)도 알아보게 0.5 아래로는 줄이지 않는다. 피카츄 0.6·이상해씨 0.7·1m 0.77·잠만보 0.9.
   // 실제 비율 그대로면 디그다가 롱스톤의 1/44 이라 보이지 않는다. 키를 모르면 1m 로 본다.
   const BODY_SIZE_MIN = 0.5;
+  // 서로 다른 포켓몬을 50마리 잡으면 같이 다닐 친구 한 칸이 더 열린다. 첫 동행은 계속 배틀 대표다.
+  function companionCapacity(caught = []) { return new Set(caught).size >= 50 ? 3 : 2; }
   function bodySize(id) {
     const meters = Number(root.POKEMON_DETAILS?.[id]?.heightMeters) || 1;
     return Math.min(1, Math.max(BODY_SIZE_MIN, 0.77 + 0.42 * Math.log10(meters)));
@@ -131,6 +133,7 @@
   function startQuestions(battle) { if (battle.phase === 'reveal') battle.phase = 'question'; }
   // 출석 선물: 열린 세대의 못 만난 포켓몬 중 선물 등급 비율(GIFT_GRADE_WEIGHTS)로 하나. 다 모은 등급은 빼고 다시 나눈다.
   function stampGift(all, caught, random = Math.random) { return pickByGrade(unlocked(all, caught), random, GIFT_GRADE_WEIGHTS); }
+  function copyYards(yards) { return Object.fromEntries(Object.entries(yards).map(([key, ids]) => [key, [...ids]])); }
   // 기록 한 벌을 그대로 옮겨 담는다(배열·설정은 새로).
   function copyState(state) {
     return {
@@ -138,6 +141,8 @@
       caught: [...(state.caught || [])], stamps: [...(state.stamps || [])], settings: { ...(state.settings || {}) },
       ...(Array.isArray(state.companions) ? { companions: [...state.companions] } : {}),
       ...(Array.isArray(state.yard) ? { yard: [...state.yard] } : {}),
+      ...(state.yards && typeof state.yards === 'object' ? { yards: copyYards(state.yards) } : {}),
+      ...(Array.isArray(state.yardsOpen) ? { yardsOpen: [...state.yardsOpen] } : {}),
       ...(Array.isArray(state.seen) ? { seen: [...state.seen] } : {})
     };
   }
@@ -148,6 +153,9 @@
     // 내 마당은 설정처럼 나중에 바꾼 쪽(preferencesUpdatedAt)을 따른다. 그쪽에 마당 기록이 없으면 다른 쪽 것을 쓴다.
     const [newer, older] = (local.preferencesUpdatedAt || 0) > (server.preferencesUpdatedAt || 0) ? [local, server] : [server, local];
     const yard = Array.isArray(newer.yard) ? newer.yard : older.yard;
+    const yards = newer.yards && typeof newer.yards === 'object' ? newer.yards : older.yards;
+    // 연 마을은 두 쪽 합집합(열쇠 수를 넘으면 storage.js 가 자른다).
+    const opened = [server.yardsOpen, local.yardsOpen].filter(Array.isArray);
     // 처음 화면 안내를 본 기록(seen: 소개를 본 것·들어가 본 메뉴)은 서버처럼 합집합. 두 쪽 다 없으면 넣지 않는다.
     const seenLists = [server.seen, local.seen].filter(Array.isArray);
     return {
@@ -159,6 +167,8 @@
       stamps: [...new Set([...(server.stamps || []), ...(local.stamps || [])])].sort(),
       settings: { ...server.settings, ...local.settings },
       ...(Array.isArray(yard) ? { yard: [...yard] } : {}),
+      ...(yards && typeof yards === 'object' ? { yards: copyYards(yards) } : {}),
+      ...(opened.length ? { yardsOpen: [...new Set(opened.flat())] } : {}),
       ...(seenLists.length ? { seen: [...new Set(seenLists.flat())].sort() } : {})
     };
   }
@@ -189,5 +199,5 @@
     if (difficulty < MAX_DIFFICULTY) patch.difficulty = difficulty + 1;
     return Object.keys(patch).length ? patch : null;
   }
-  root.GameRules = { LEVEL_UP_STREAK, MAX_DIFFICULTY, nextStreak, harderSettings, REGIONS, generation, pool, choose, newBattle, answer, startQuestions, mergeState, stampGift, wordGift, grassStep, GRASS, grade, pickByGrade, bodySize, GRADE_WEIGHTS, EARLY_FAVORITES, EARLY_FAVORITES_CHANCE, GIFT_GRADE_WEIGHTS, shuffle, STAMPS_PER_GIFT: 5, WORDS_PER_GIFT: 5 };
+  root.GameRules = { companionCapacity, LEVEL_UP_STREAK, MAX_DIFFICULTY, nextStreak, harderSettings, REGIONS, generation, pool, choose, newBattle, answer, startQuestions, mergeState, stampGift, wordGift, grassStep, GRASS, grade, pickByGrade, bodySize, GRADE_WEIGHTS, EARLY_FAVORITES, EARLY_FAVORITES_CHANCE, GIFT_GRADE_WEIGHTS, shuffle, STAMPS_PER_GIFT: 5, WORDS_PER_GIFT: 5 };
 })(window);

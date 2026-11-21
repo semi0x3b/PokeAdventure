@@ -1,0 +1,8 @@
+QA_HEADER {"width":393,"head":{"x":74,"y":14,"right":246,"bottom":83.296875},"map":{"x":258,"y":8,"right":310,"bottom":60},"clear":true}
+QA_HEADER {"width":734,"head":{"x":74,"y":14,"right":587,"bottom":83.296875},"map":{"x":599,"y":8,"right":651,"bottom":60},"clear":true}
+QA_HEADER {"width":1024,"head":{"x":218.5,"y":14,"right":732.5,"bottom":83.296875},"map":{"x":889,"y":8,"right":941,"bottom":60},"clear":true}
+QA_WORD_INITIAL {"text":"빵","reads":["빵"]}
+QA_WORD_CHANGED {"text":"꽃","reads":["빵","꽃","꽃"]}
+QA_AUTH 기억/Enter/재진입 통과
+QA_RESULT pass
+None

@@ -1,0 +1,5 @@
+QA_TRACE {"text":"꼬렛","complete":true,"strokes":12,"pass":true}
+QA_TRACE {"text":"구구","complete":true,"strokes":6,"pass":true}
+QA_TRACE {"text":"d","complete":true,"strokes":2,"pass":true}
+QA_RESULT pass
+None
