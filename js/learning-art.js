@@ -154,5 +154,21 @@
     return typeof choice === 'number' ? spriteArt(choice) : wordArt(choice);
   }
 
-  global.LearningArt = Object.freeze({ html, picture, optionPictures, shapePicture, isSmall, countingArt, tokenPicture });
+  // 가르기는 두 무더기와 빈칸으로 표시한다. 큰 수의 10개는 그림 하나 + ‘10’ 상자로 줄여
+  // 100까지도 그림 백 개를 빽빽하게 그리지 않는다. 구할 무더기의 합계 숫자는 노출하지 않는다.
+  function splittingHtml({ left, right }, question) {
+    const bundled = left + right > 20;
+    const balls = count => '<i></i>'.repeat(count);
+    const block = count => {
+      const tens = Math.floor(count / 10), ones = count % 10;
+      const ten = bundled ? '<span class="learning-ten"><i></i><b>10</b></span>' : `<span class="gb-ten">${balls(10)}</span>`;
+      const packs = tens ? `<span class="gb-count-packs" style="--columns:${Math.min(3, tens)}">${ten.repeat(tens)}</span>` : '';
+      const singles = ones ? `<span class="gb-count-ones" style="--columns:${Math.min(5, ones)}">${balls(ones)}</span>` : '';
+      return `<span class="gb-count-block">${packs}${singles}</span>`;
+    };
+    const art = countingArt(question);
+    return `<div class="gb-count gb-count--large${art ? ' ' + art.className : ''}"${art ? ` style="${art.style}"` : ''} aria-hidden="true"><span class="gb-count-part">${block(left)}</span><span class="gb-count-part is-unknown"><b class="gb-count-mark">?</b>${block(right)}</span></div>`;
+  }
+
+  global.LearningArt = Object.freeze({ html, picture, optionPictures, shapePicture, isSmall, countingArt, tokenPicture, splittingHtml });
 })(typeof window === 'undefined' ? globalThis : window);

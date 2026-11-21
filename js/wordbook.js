@@ -10,6 +10,8 @@
   const LEAVE_MS = 350;
   // 들어올 때 「글자를 써 보자!」 시작 화면이 떠 있는 시간(wordbook.css wordbook-intro 와 같게).
   const INTRO_MS = 2200;
+  // 연습장 페이드인(wordbook.css .wordbook-canvas)이 끝난 뒤 낱말을 읽는다.
+  const READ_DELAY_MS = 500;
   // 피카츄 스티커: 붙고 흔들린 뒤 STAMP_FLY_AT 에 위쪽 칸으로 날아가 STAMP_FLY_MS 동안 작아지며 들어간다 — 붙고 작아지기까지 총 2초(2026-11-13 사용자).
   const STAMP_FLY_AT = 1300;
   const STAMP_FLY_MS = 700;
@@ -66,7 +68,7 @@
 
   // onPass(entry): 통과할 때마다 부른다. 선물이 생겼으면 별 도장이 끝난 뒤 부를 함수를 돌려준다.
   // giftProgress(): 다음 선물까지 채운 칸 { filled, total }. 없거나 null 이면(게스트) 피카츄 도장 칸을 두지 않는다.
-  function mount(container, { onFeedback, onRead, onPass, giftProgress, owner = null } = {}) {
+  function mount(container, { onFeedback, onRead, canRead = () => true, onPass, giftProgress, owner = null } = {}) {
     if (!container || !container.ownerDocument || typeof container.replaceChildren !== 'function') {
       throw new TypeError('단어집을 표시할 화면 요소가 필요합니다.');
     }
@@ -88,6 +90,9 @@
     root.setAttribute('aria-label', '글자 쓰기');
     let destroyed = false;
     let cleanupView = () => {};
+    let introFinished = false;
+    let readCurrentWord = () => {};
+    let lastReadWordId = null;
     // 선물 연출 예약은 화면을 다시 그려도(넘기기·탭) 남겨 두고, 글자 쓰기를 떠날 때만 취소한다.
     let revealTimer = null;
     container.replaceChildren(root);
@@ -217,7 +222,25 @@
       wordLabel.replaceChildren(...[...entry.word].map(character => node('span', 'wordbook-letter', character)));
       sample.append(pictureOf(entry), wordLabel);
       if (entry.translation) sample.append(node('span', 'wordbook-translation', entry.translation));
-      listen(sample, 'click', () => { if (typeof onRead === 'function') onRead(entry.word); });
+      const readWord = () => {
+        lastReadWordId = entry.id;
+        if (typeof onRead === 'function') onRead(entry.word);
+      };
+      listen(sample, 'click', readWord);
+      let practiceReady = false;
+      let readTimer = null;
+      const autoRead = () => {
+        if (!introFinished || !practiceReady || lastReadWordId === entry.id || typeof onRead !== 'function') return;
+        // 선물·설정·숨겨진 화면과 기존 안내가 끝나기를 기다린다. 예약은 하나만 유지한다.
+        if (!canRead() || browser.speechSynthesis?.speaking || browser.speechSynthesis?.pending) {
+          readTimer = browser.setTimeout(autoRead, 100);
+          return;
+        }
+        readWord();
+      };
+      readCurrentWord = autoRead;
+      cleanups.push(() => { readCurrentWord = () => {}; browser.clearTimeout(readTimer); });
+      readTimer = browser.setTimeout(() => { practiceReady = true; autoRead(); }, READ_DELAY_MS);
 
       // 다음 포켓몬 선물까지: 피카츄 도장 칸이 하나씩 찍힌다(로그인한 계정만). 상자 밖(세로는 위, 가로는 왼쪽)에 따로 둔다.
       const hasGift = typeof giftProgress === 'function' && Boolean(giftProgress());
@@ -460,7 +483,7 @@
     intro.append(introIcon, node('p', 'wordbook-intro-text', '글자를 써 보자!'));
     // 화면을 다시 그려도(탭·다음 낱말) 지워지지 않게 연습장 바깥(container)에 둔다.
     container.append(intro);
-    const introTimer = browser.setTimeout(() => intro.remove(), INTRO_MS);
+    const introTimer = browser.setTimeout(() => { intro.remove(); introFinished = true; readCurrentWord(); }, INTRO_MS);
     return {
       // 목록을 보는 중이면 쓰기 화면으로 돌아가고 true, 쓰기 화면이면 false(바깥 화면이 처음으로 보낸다).
       back() {

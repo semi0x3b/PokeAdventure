@@ -13,3 +13,6 @@
 .policy-page p, .policy-page a { font-size: 18px; line-height: 1.75; word-break: keep-all; overflow-wrap: anywhere; color: inherit; }
 body[data-screen="locked"] .topbar { display: none; }
 @media (orientation: landscape) and (max-height: 520px) { .parent-lock { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(260px, 1.3fr); gap: 12px; } .parent-lock-logo { width: 100%; max-height: 55dvh; } .parent-lock-card { padding: 14px; } .parent-lock-card > .ui-icon { display: none; } .parent-lock-card h1 { margin: 0; font-size: 24px; } .parent-lock-card p { margin: 8px 0; font-size: 16px; } .parent-lock-links { grid-column: 1 / -1; } }
+
+.auth-remember { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: var(--fs-s); }
+.auth-remember input { width: 22px; height: 22px; margin: 0; accent-color: var(--c-blue); flex-shrink: 0; }

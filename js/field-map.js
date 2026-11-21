@@ -12,6 +12,7 @@
     floor: 'img/field-tiles/tileset-floor.png',
     water: 'img/field-tiles/tileset-water.png',
     nature: 'img/field-tiles/tileset-nature.png',
+    cacti: 'img/field-tiles/tileset-cacti.png', // Kenney Roguelike/RPG pack, CC0 — kenney-roguelike-LICENSE.txt
     house: 'img/field-tiles/tileset-house.png',
     desert: 'img/field-tiles/tileset-desert.png',
     detail: 'img/field-tiles/tileset-floor-detail.png',
@@ -50,8 +51,9 @@
     boulder: { sheet: 'nature', rect: [80, 208, 16, 16], over: 0 },
     'rock-big': { sheet: 'nature', rect: [208, 128, 32, 32], over: 1 },
     'rock-gray': { sheet: 'nature', rect: [256, 128, 32, 32], over: 1 }, // 2026-11-13: 272 에서 잘라 큰 바위 반쪽+작은 바위가 나왔다
-    cactus: { sheet: 'nature', rect: [176, 128, 16, 48], over: 2 },
-    'cactus-small': { sheet: 'nature', rect: [192, 144, 16, 32], over: 1 },
+    // nature의 옛 좌표는 대나무와 죽순. 꼭대기·팔·밑동이 있는 실제 선인장을 한 장으로 놓는다.
+    cactus: { sheet: 'cacti', rect: [374, 153, 16, 16], over: 0 },
+    'cactus-small': { sheet: 'cacti', rect: [442, 153, 16, 16], over: 0 },
     'house-a': { sheet: 'house', rect: [0, 0, 64, 48], over: 1 },
     'house-b': { sheet: 'house', rect: [64, 0, 64, 48], over: 1 },
     'house-c': { sheet: 'house', rect: [128, 0, 64, 48], over: 1 },
@@ -134,8 +136,9 @@
       ],
       props: [
         ['palms', 3, 3], ['palms', 14, 4], ['palms', 4, 13], ['rock-big', 28, 6], ['rock-gray', 31, 7], ['rock-big', 30, 28], ['rock-big', 8, 30],
-        ['rock-gray', 24, 33], ['cactus', 25, 11], ['cactus', 14, 26], ['cactus', 33, 17], ['cactus-small', 11, 23], ['cactus-small', 27, 24],
-        ['cactus-small', 6, 34], ['cactus', 34, 33], ['dome', 26, 15], ['desert-house', 5, 24], ['boulder', 23, 9], ['rock', 16, 30],
+        // 한 칸짜리 선인장을 기존 밑동 위치에 놓아 충돌 칸을 유지하고, 시작점 옆에도 보여 준다.
+        ['rock-gray', 24, 33], ['cactus', 25, 13], ['cactus', 14, 28], ['cactus', 33, 19], ['cactus-small', 11, 24], ['cactus-small', 27, 25],
+        ['cactus-small', 6, 35], ['cactus', 34, 35], ['cactus', 18, 15], ['dome', 26, 15], ['desert-house', 5, 24], ['boulder', 23, 9], ['rock', 16, 30],
         ['skull', 29, 21], ['bone', 12, 33], ['bone', 23, 17], ['pebble', 9, 21], ['pebble', 31, 12], ['skull', 17, 13],
       ],
       tallGrass: [[27, 9, 31, 12], [5, 16, 6, 18], [24, 25, 28, 28], [11, 27, 14, 30], [32, 22, 35, 25]],

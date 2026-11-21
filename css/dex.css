@@ -43,6 +43,11 @@ body[data-screen="dex"] { background: var(--c-sky); }
 /* 모험 파트너: 왼쪽이 배틀에 나가는 대표, 오른쪽이 필드에서 따라오는 동행 */
 .party-panel { max-width: 640px; margin: var(--gap-m) auto 0; padding: var(--gap-s); border: var(--border-strong); border-radius: var(--r-l); background: var(--c-surface); }
 .party-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-s); }
+/* 50마리부터 열린 세 칸은 그림 위·이름 아래로 놓아 좁은 폰에서도 칸 밖으로 넘치지 않는다. */
+.party-slots:has([data-party-slot="2"]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.party-slots:has([data-party-slot="2"]) .party-slot { min-width: 0; flex-direction: column; justify-content: center; text-align: center; }
+.party-slots:has([data-party-slot="2"]) .party-slot img { max-width: 100%; }
+.party-slots:has([data-party-slot="2"]) .party-slot strong { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .party-slot {
   position: relative;
   display: flex;
@@ -74,7 +79,8 @@ body[data-screen="dex"] { background: var(--c-sky); }
   20% { scale: 1; outline-color: var(--c-gold); }
 }
 .party-tag { position: absolute; top: -12px; right: 10px; padding: 0 8px; border-radius: var(--r-s); background: var(--c-primary); color: var(--c-on-primary); font-size: var(--fs-s); font-weight: var(--fw-bold); }
-.party-slot[data-party-slot="1"] .party-tag { background: var(--c-blue); }
+.party-slot[data-party-slot="1"] .party-tag,
+.party-slot[data-party-slot="2"] .party-tag { background: var(--c-blue); }
 .party-tag { border: 2px solid var(--c-ink); }
 .party-hint { padding: var(--gap-s) var(--gap-m); font-size: var(--fs-m); font-weight: var(--fw-bold); color: var(--c-ink-soft); text-align: center; }
 

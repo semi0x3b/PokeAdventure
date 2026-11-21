@@ -241,7 +241,7 @@
 @keyframes field-cloud { from { transform: translateX(-50%); } to { transform: translateX(100%); } }
 
 /* 화면에 붙은 층: 숲 도트 나뭇잎, 사막 모래 알갱이 */
-.field-weather { position: absolute; z-index: 4000; inset: 0; overflow: hidden; pointer-events: none; }
+.field-weather { position: absolute; z-index: 900; inset: 0; overflow: hidden; pointer-events: none; }
 .field-leaf { position: absolute; top: -24px; width: 9px; height: 6px; opacity: 0; animation: field-leaf-fall 9s linear infinite; }
 .field-leaf > span {
   display: block;
@@ -251,7 +251,8 @@
   box-shadow: 3px 3px 0 var(--c-green-press);
   animation: field-leaf-sway 2.2s steps(4) infinite alternate;
 }
-.field-leaf:nth-child(3n) > span { background: var(--c-gold); box-shadow: 3px 3px 0 var(--c-gold-press); }
+/* 노란 네모가 머리 위 표식처럼 반짝이지 않게 잎은 초록색으로 통일한다. */
+.field-screen[data-region="desert"] .field-weather { display: none; }
 @keyframes field-leaf-fall {
   0% { opacity: 0; transform: translate(0, 0); }
   8%, 90% { opacity: .9; }

@@ -1,0 +1,7 @@
+QA_WILD {"name":"아라리","id":102,"filter":"brightness(0)"}
+QA_CAPTURE {"throwAt":38743.30000001192,"lines":[{"text":"놀이가 끝난 작은 블록이 바닥에 있어. 어떻게 할까? 보기를 들어 보세요. 일번. 상자에 정리해. 이번. 입에 넣어. 삼번. 발로 찬다. 사번. 계단에 뿌려.","start":33315.30000001192,"end":33315.70000000298},{"text":"지금이야! 친구로 맞이하자!","start":36432.10000000894,"end":36432.70000000298},{"text":"간다! 몬스터볼!","start":38734.70000000298,"end":38735.20000000298}],"count":56}
+QA_TIMING {"lineEnded":38735.20000000298,"throwAt":38743.30000001192,"passed":true}
+QA_RETURN field
+QA_CACHE {"remote":117,"local":1}
+QA_RESULT pass
+None

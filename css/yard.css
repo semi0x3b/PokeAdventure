@@ -268,6 +268,29 @@
   height: calc(var(--touch) + var(--gap-s));
 }
 .yard-party-button .ui-icon { width: 32px; height: 32px; }
+.yard-feed-button {
+  position: absolute;
+  z-index: 6;
+  right: calc(var(--safe-right) + var(--gap-m) * 2 + var(--touch) + var(--gap-s));
+  bottom: calc(var(--safe-bottom) + var(--gap-m));
+  min-width: calc(var(--touch) + var(--gap-s));
+  height: calc(var(--touch) + var(--gap-s));
+}
+.yard-feed-button img { width: 32px; height: 32px; object-fit: contain; }
+.yard-feed-button[hidden] { display: none; }
+.yard-feed-button[aria-pressed="true"] { outline: 3px solid var(--c-blue); outline-offset: 2px; }
+.yard-screen.is-feeding { cursor: copy; }
+.yard-berry {
+  position: absolute;
+  width: calc(var(--yard-scale) * 12px);
+  height: calc(var(--yard-scale) * 12px);
+  max-width: none;
+  translate: -50% -80%;
+  pointer-events: none;
+  animation: yard-berry-drop .4s ease-out;
+}
+@keyframes yard-berry-drop { from { transform: translateY(-24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .yard-berry { animation: none; } }
 .yard-party-button[hidden] { display: none; }
 .yard-party-button.is-calling { animation: yard-call 1.2s ease-in-out infinite; }
 @keyframes yard-call { 50% { transform: translateY(-6px); } }
@@ -329,3 +352,131 @@
   .yard-screen *, .yard-picker * { animation: none !important; transition: none !important; }
   .yard-leaf, .yard-clouds { display: none; }
 }
+
+/* ---------- 눈의 마을: 내리는 눈 ---------- */
+.yard-screen--snow .yard-clouds { display: none; }
+.yard-snowflake {
+  position: absolute;
+  top: -12px;
+  width: calc(var(--yard-scale) * 2px);
+  height: calc(var(--yard-scale) * 2px);
+  background: var(--c-surface);
+  box-shadow: 0 0 0 1px var(--c-line);
+  animation: yard-snowfall 9s linear infinite, yard-snow-sway 3s ease-in-out infinite alternate;
+}
+.yard-snowflake.big { width: calc(var(--yard-scale) * 3px); height: calc(var(--yard-scale) * 3px); }
+@keyframes yard-snowfall { to { top: 100%; } }
+@keyframes yard-snow-sway { from { translate: -10px 0; } to { translate: 10px 0; } }
+@media (prefers-reduced-motion: reduce) { .yard-snowflake { display: none; } }
+
+/* ---------- 마당 고르기 목록 ---------- */
+.yard-list-screen {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--gap-l) var(--gap-m) calc(var(--safe-bottom) + var(--gap-l));
+}
+.yard-list-title { margin: 0 0 var(--gap-m); text-align: center; font-size: var(--fs-xl); }
+.yard-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-m); }
+.yard-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--gap-s);
+  padding: var(--gap-s);
+  border: 3px solid var(--c-line);
+  border-radius: var(--r-m);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-1);
+  color: var(--c-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.yard-tile:focus-visible { outline: 3px solid var(--c-blue); outline-offset: 2px; }
+.yard-tile-art, .yard-tile-lock {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-s);
+  image-rendering: pixelated;
+  object-fit: cover;
+}
+.yard-tile-lock { display: grid; place-items: center; background: var(--c-ink); }
+.yard-tile-lock .ui-icon { width: 40px; height: 40px; }
+.yard-tile-name { font-size: var(--fs-m); font-weight: var(--fw-bold); }
+.yard-tile-count, .yard-tile-hint { font-size: var(--fs-s); color: var(--c-ink-soft); }
+.yard-tile.is-locked { cursor: not-allowed; }
+
+/* ---------- 마을들: 소품·별 ---------- */
+.yard-prop {
+  /* 소품 32px 도트를 타일보다 한 단계 작은 정수배로(포켓몬보다 크지 않게). */
+  --prop-s: max(1, calc(var(--yard-scale) - 1));
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--prop-s) * 32px);
+  height: calc(var(--prop-s) * 32px);
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  background-position: calc(var(--prop-index) * var(--prop-s) * -32px) 0;
+  image-rendering: pixelated;
+  transform: translate(-50%, -100%);
+}
+.yard-star {
+  position: absolute;
+  width: calc(var(--yard-scale) * 2px);
+  height: calc(var(--yard-scale) * 2px);
+  background: var(--c-gold);
+  animation: yard-twinkle 2.4s ease-in-out infinite alternate;
+}
+.yard-star.big { width: calc(var(--yard-scale) * 3px); height: calc(var(--yard-scale) * 3px); background: var(--c-surface); }
+@keyframes yard-twinkle { from { opacity: .15; } to { opacity: 1; } }
+.yard-screen--space .yard-ground, .yard-tile[data-yard-theme="space"] .yard-tile-art { filter: hue-rotate(210deg) brightness(.5) saturate(1.4); }
+.yard-screen--space .yard-clouds, .yard-screen--robot .yard-clouds, .yard-screen--gem .yard-clouds { display: none; }
+.yard-screen--gem .yard-ground, .yard-tile[data-yard-theme="gem"] .yard-tile-art { filter: brightness(.75) saturate(1.2); }
+@media (prefers-reduced-motion: reduce) { .yard-star { animation: none; } }
+
+/* ---------- 마을 고르기(3열, 셋째 줄 일부를 가려 아래 목록 안내) ---------- */
+.yard-list-screen { padding-top: calc(var(--safe-top) + var(--gap-m)); }
+.yard-list-head { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-s); min-height: var(--touch); margin: 0 calc(2 * var(--touch) + var(--gap-m)) var(--gap-m) calc(var(--touch) + var(--gap-s)); }
+.yard-list-head .yard-list-title { margin: 0; font-size: var(--fs-l); line-height: 1.15; text-align: center; }
+.yard-key-count { margin: 0; padding: 2px var(--gap-m); border-radius: var(--r-pill); background: var(--c-surface); box-shadow: var(--shadow-1); font-size: var(--fs-l); font-weight: var(--fw-heavy); white-space: nowrap; }
+.yard-list-screen { position: relative; }
+.yard-list-line { position: absolute; z-index: 5; left: 50%; translate: -50% 0; width: max-content; max-width: calc(100% - 2 * var(--gap-m)); margin: 0; padding: var(--gap-s) var(--gap-m); border-radius: var(--r-pill); background: var(--c-surface); box-shadow: var(--shadow-2); pointer-events: none; text-align: center; font-size: var(--fs-m); font-weight: var(--fw-bold); opacity: 0; transition: opacity .2s; }
+.yard-list-line.visible { opacity: 1; }
+.yard-list { grid-auto-rows: max(150px, calc((100dvh - var(--safe-top) - 110px) / 2.85)); }
+.yard-tile { min-height: 0; overflow: hidden; animation: yard-tile-in .35s ease-out backwards; animation-delay: calc(var(--order) * 30ms); }
+@keyframes yard-tile-in { from { transform: scale(.85); opacity: 0; } }
+.yard-tile-art, .yard-tile-lock { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; height: 0; }
+.yard-tile-lock { position: relative; }
+.yard-tile-lock .ui-icon { position: absolute; left: 6px; top: 6px; width: 28px; height: 28px; }
+.yard-tile-peek, .yard-confirm-art, .yard-unlock-art {
+  display: block;
+  width: 64px;
+  height: 64px;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+.yard-tile-peek { filter: grayscale(1) brightness(.55); }
+.yard-confirm-art, .yard-unlock-art { width: 96px; height: 96px; }
+.yard-key-art { display: inline-block; width: 32px; height: 32px; vertical-align: middle; background: url('../img/yard/key.png') 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+.yard-unlock-art.yard-key-art { width: 96px; height: 96px; }
+.yard-confirm-title { display: inline-flex; align-items: center; gap: var(--gap-s); }
+.yard-tile.can-open .yard-tile-peek { filter: none; }
+.yard-tile-name { font-size: var(--fs-s); line-height: 1.2; }
+.yard-tile-count, .yard-tile-hint { font-size: 13px; line-height: 1.2; }
+.yard-tile.can-open { border-color: var(--c-gold); }
+.yard-tile.can-open .yard-tile-lock { background: color-mix(in srgb, var(--c-ink) 80%, var(--c-gold)); }
+.yard-tile-key { position: absolute; right: 6px; bottom: 4px; animation: yard-call 1.2s ease-in-out infinite; }
+.yard-tile.is-opened { animation: yard-opened .7s ease-out; }
+@keyframes yard-opened { 0% { transform: scale(.6) rotate(-6deg); } 60% { transform: scale(1.1) rotate(2deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .yard-tile, .yard-tile-key, .yard-tile.is-opened { animation: none; } }
+
+/* ---------- 마을 열기·열림 축하 카드 ---------- */
+.yard-confirm, .yard-unlock-card { display: grid; justify-items: center; gap: var(--gap-m); text-align: center; font-size: var(--fs-l); }
+.yard-confirm p, .yard-unlock-card p { margin: 0; }
+.yard-unlock-art { animation: yard-hop .8s ease-out 2; }
+.yard-confirm-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap-m); }
+@media (prefers-reduced-motion: reduce) { .yard-unlock-art { animation: none; } }

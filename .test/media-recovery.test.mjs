@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 function worker() {
  const handlers = new Map(), requests = [], stores = new Map();
- const caches = {async open(name) {if (!stores.has(name)) stores.set(name,new Map());const rows=stores.get(name);return {async match(req){return rows.get(req.url);},async put(req,res){rows.set(req.url,res);},async keys(){return [...rows.keys()];},async delete(key){rows.delete(key);}};}};
+ const caches = {async open(name) {if (!stores.has(name)) stores.set(name,new Map());const rows=stores.get(name);return {async match(req){return rows.get(typeof req==='string'?req:req.url);},async put(req,res){rows.set(typeof req==='string'?req:req.url,res);},async keys(){return [...rows.keys()];},async delete(key){rows.delete(key);}};}};
  const scope={URL,Request,Response,Headers,AbortController,setTimeout,clearTimeout,caches,importScripts(){},self:{APP_REVISION:'recovery',APP_SHELL:[],location:{origin:'https://game.example'},addEventListener(name,fn){handlers.set(name,fn);}},fetch:async req=>{requests.push(req.url||req);throw Error('primary unavailable');}};
  vm.runInNewContext(fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8'),scope);
  const get=async (url,init)=>{let result;handlers.get('fetch')({request:new Request(url,init),respondWith(value){result=value;}});return await result;};

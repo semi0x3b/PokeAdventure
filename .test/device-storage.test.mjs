@@ -173,3 +173,18 @@ test('깊게 중첩되거나 날짜·설정·출석 중복·마당이 잘못된 
   const invalid=[b=>{b.state.settings.mathMax=3;},b=>{b.state.settings.trainerLook='unknown';},b=>{b.state.settings.readAloud='yes';},b=>{b.state.stamps=['2026-11-17','2026-11-17'];},b=>{b.state.stamps=['2026-02-30'];},b=>{b.state.yard=[25];},b=>{b.state.updatedAt=-1;},b=>{b.state.seen=['untrusted'];},b=>{b.state.wordsWritten=-1;},b=>{let next=b.state;for(let i=0;i<30;i++){next.nested={};next=next.nested;}}];
   for(const edit of invalid){const backup=plain(original);edit(backup);await assert.rejects(h.storage.importBackup(JSON.stringify(backup)));assert.equal(h.values.get(KEY),saved);}
 });
+
+test('눈의 마을(yards.snow)은 저장·백업 복원되고, 잡지 않은 포켓몬·모르는 마당은 거절한다',async()=>{
+  const h=await registered();h.storage.update({caught:[7,25]});assert.equal(Object.hasOwn(h.disk().state,'yards'),false);
+  h.storage.update({yards:{snow:[25]}},true);assert.deepEqual(h.disk().state.yards,{snow:[25]});
+  const raw=await h.storage.exportBackup();const b=await registered();await b.storage.importBackup(raw);assert.deepEqual(plain(b.storage.state.yards),{snow:[25]});
+  assert.throws(()=>h.storage.update({yards:{snow:[1]}},true),/마당/);assert.throws(()=>h.storage.update({yards:{castle:[25]}},true),/마당/);assert.deepEqual(h.disk().state.yards,{snow:[25]});
+});
+
+test('열쇠로 연 마을(yardsOpen)은 받은 열쇠 수까지만 저장되고, 넘치는 백업은 거절한다',async()=>{
+  const ids=Array.from({length:20},(_,i)=>i+1);const h=await registered();h.storage.update({caught:ids});
+  h.storage.update({yardsOpen:['robot']},true);assert.deepEqual(h.disk().state.yardsOpen,['robot']);
+  h.storage.update({yardsOpen:['robot','doll']},true);assert.deepEqual(h.disk().state.yardsOpen,['robot']);
+  assert.throws(()=>h.storage.update({yardsOpen:['snow']},true),/마을/);
+  const backup=JSON.parse(await h.storage.exportBackup());backup.state.yardsOpen=['robot','doll'];await assert.rejects(h.storage.importBackup(JSON.stringify(backup)),/마을/);
+});

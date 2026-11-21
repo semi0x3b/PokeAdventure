@@ -4,6 +4,12 @@
   let generation = 0;
   let activeAudio = null;
   let activeUtterance = null;
+  let completion = null;
+  function completeReading(success) {
+    const done = completion;
+    completion = null;
+    done?.(success);
+  }
   let voices = [];
   const LETTERS = ['에이', '비', '씨', '디', '이', '에프', '지', '에이치', '아이', '제이', '케이', '엘', '엠', '엔', '오', '피', '큐', '아르', '에스', '티', '유', '브이', '더블유', '엑스', '와이', '제트'];
 
@@ -31,7 +37,8 @@
         .replace(/[+＋]/g, ' 더하기 ').replace(/[−–-]/g, ' 빼기 ').replace(/[=＝]/g, ' 은 ');
     }
     if (area === 'english') value = value.replace(/\b[A-Za-z]\b/g, letter => LETTERS[letter.toUpperCase().charCodeAt(0) - 65]);
-    return value.replace(/\s+/g, ' ').trim();
+    // 짧은 명령형이 ‘팔로 자’처럼 뭉개지는 것을 줄인다. 화면의 보기 글은 그대로 둔다.
+    return value.replace(/발로\s+차(?=[.!?]|$)/gu, '발로 찬다').replace(/\s+/g, ' ').trim();
   }
   // 보기 번호는 한자어 수 한글로 읽는다(2026-11-15 사용자 「보기 읽을때 번호를 한번이라고 하는게 일번이라고 해야함」 — 엔진이 「1번」을 「한 번」으로 읽었다).
   // 화면의 번호(.gb-answer-no)는 그대로 숫자 1~4.
@@ -56,6 +63,7 @@
     try { audio.removeAttribute('src'); audio.load(); } catch { /* 재생 자원 해제 불가 */ }
   }
   function stop() {
+    completeReading(false);
     generation++;
     stopAudio();
     activeUtterance = null;
@@ -77,9 +85,13 @@
       const voice = koreanVoice();
       if (voice) utterance.voice = voice;
       activeUtterance = utterance;
-      utterance.onend = utterance.onerror = function () {
-        if (token === generation && activeUtterance === utterance) activeUtterance = null;
+      const finish = success => {
+        if (token !== generation || activeUtterance !== utterance) return;
+        activeUtterance = null;
+        completeReading(success);
       };
+      utterance.onend = () => finish(true);
+      utterance.onerror = () => finish(false);
       // 크롬(특히 안드로이드)은 cancel() 바로 뒤에 speak() 하면 새 읽기를 버리는 일이 있어 잠깐(80ms) 뒤에 읽고,
       // 1.5초 안에 읽기가 시작되지 않으면(엔진이 멈춘 상태) 한 번 끊고 다시 읽는다(2026-11-13 사용자: 문제를 갑자기 안 읽어 준다).
       let started = false;
@@ -107,7 +119,7 @@
     } catch { activeUtterance = null; return false; }
   }
   function read(question, options) {
-    const { repeat = false, enabled = true } = options || {};
+    const { repeat = false, enabled = true, onComplete = null } = options || {};
     if (!enabled) { cancel(); return false; }
     if (!question || typeof question !== 'object') return false;
     const key = question.id == null ? JSON.stringify([question.prompt, question.options, question.audio]) : String(question.id);
@@ -116,6 +128,7 @@
     if (!hasAudio && !hasSpeech()) return false;
     const text = textFor(question);
     stop();
+    completion = onComplete;
     const token = generation;
     lastKey = key;
 
@@ -125,22 +138,42 @@
         if (usedFallback || token !== generation) return;
         usedFallback = true;
         stopAudio();
-        if (!speak(text, token)) lastKey = null;
+        if (!speak(text, token)) { lastKey = null; completeReading(false); }
       }
       try {
         const audio = new root.Audio(question.audio);
         activeAudio = audio;
         audio.preload = 'auto';
         audio.onerror = fallback;
-        audio.onended = function () { if (token === generation && activeAudio === audio) activeAudio = null; };
+        audio.onended = function () { if (token === generation && activeAudio === audio) { activeAudio = null; completeReading(true); } };
         const playing = audio.play();
         if (playing && playing.catch) playing.catch(fallback);
         return true;
       } catch { fallback(); return hasSpeech(); }
     }
     const started = speak(text, token);
-    if (!started) lastKey = null;
+    if (!started) { lastKey = null; completeReading(false); }
     return started;
+  }
+
+  function readAndWait(question, options = {}) {
+    return new Promise(resolve => {
+      let done = false, token;
+      const finish = success => {
+        if (done) return;
+        done = true;
+        root.clearTimeout(timer);
+        resolve(success);
+      };
+      // onend를 보내지 않는 엔진에서도 배틀이 멈추지 않게 한다.
+      const timer = root.setTimeout(() => {
+        if (token === generation) cancel();
+        finish(false);
+      }, 12000);
+      const started = read(question, { ...options, onComplete: finish });
+      token = generation;
+      if (!started) finish(false);
+    });
   }
 
   refreshVoices();
@@ -159,7 +192,7 @@
   if (root.speechSynthesis && root.speechSynthesis.addEventListener) root.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
   // voice·clean·speaking: 음성 안내(js/voice-guide.js)가 같은 목소리·같은 글 다듬기를 쓰고, 문제를 읽는 동안에는 끼어들지 않게 한다.
   root.Narration = Object.freeze({
-    read, cancel, voice: koreanVoice, clean,
+    read, readAndWait, cancel, voice: koreanVoice, clean,
     get speaking() { return Boolean(activeAudio || (activeUtterance && hasSpeech() && (waiting || root.speechSynthesis.speaking || root.speechSynthesis.pending))); },
     get supported() { return hasSpeech() || typeof root.Audio === 'function'; }
   });

@@ -11,7 +11,7 @@ const ROOT = process.env.GAME_ROOT || path.resolve(path.dirname(fileURLToPath(im
 
 // companions: 파트너 칸(없으면 옛 단일 companion 없음). local: 이 기기 localStorage 흉내(본 안내 기억).
 // sound: 소리 설정 하나(settings.sound, 2026-11-15 — 카드 읽기도 이 값만 본다). extra: 옛 계정에 남은 readAloud 등 다른 설정 값.
-function harness(caught = [], { sound = false, extra = {}, companions = null, local = new Map() } = {}) {
+function harness(caught = [], { sound = false, extra = {}, companions = null, local = new Map(), holdSpeech = false } = {}) {
   let time = 0, sequence = 0;
   const timers = new Map(), listeners = new Map(), nodes = new Map(), documentListeners = new Map();
   function schedule(callback, delay = 0) { const id = ++sequence; timers.set(id, { at: time + Math.max(0, delay), callback }); return id; }
@@ -52,8 +52,9 @@ function harness(caught = [], { sound = false, extra = {}, companions = null, lo
   const localStorage = { getItem: key => (local.has(key) ? local.get(key) : null), setItem: (key, value) => { local.set(key, String(value)); } };
   const window = { document, localStorage, innerWidth: 390, innerHeight: 844, addEventListener(type, callback) { listeners.set(type, callback); }, removeEventListener() {}, dispatchEvent() {}, scrollTo() {}, matchMedia: () => media, setTimeout: schedule, clearTimeout: removeTimer };
   // 문제 읽기 기록: 읽을 문장·읽을 보기 차례와 설정에 따른 enabled 값을 남긴다.
-  const reads = [];
+  const reads = [], speechWaits = [];
   window.Narration = { read(question, options) { reads.push({ text: question.prompt, options: question.options, enabled: options.enabled }); return true; }, cancel() {} };
+  if (holdSpeech) window.Narration.readAndWait = question => new Promise(resolve => speechWaits.push({ text: question.prompt, resolve }));
   const performance = { now: () => time };
   window.performance = performance;
   const context = vm.createContext({
@@ -93,7 +94,7 @@ function harness(caught = [], { sound = false, extra = {}, companions = null, lo
     const target = { dataset, closest: wanted => (wanted === selector ? target : null) };
     return documentListeners.get('click')({ target });
   }
-  return { node:selector=>document.querySelector(selector), click, local, reads, game: window.__game, tutorial: window.Tutorial, main: document.querySelector('#main'), root: document.documentElement, storage, writes, advance, press, quiz };
+  return { node:selector=>document.querySelector(selector), click, local, reads, speechWaits, game: window.__game, tutorial: window.Tutorial, main: document.querySelector('#main'), root: document.documentElement, storage, writes, advance, press, quiz };
 }
 
 test('Tutorial.needed: 로그인했고 잡은 포켓몬이 0마리일 때만 튜토리얼', () => {
@@ -435,4 +436,23 @@ test('같이 다닐 친구 안내는 가두지 않는다: 카드를 본 뒤 도�
   assert.deepEqual(guided(h.main.innerHTML), [], '도감에 다시 와도 반짝이지 않는다');
   await h.click('[data-action]', { action: 'gift-close' });
   assert.notEqual(h.game.screen, 'partyGuide', '한 번 본 뒤에는 다시 안 뜸');
+});
+
+test('공격 대사와 가랏 몬스터볼 읽기가 끝나야 실제 공을 던진다', async()=>{
+ const h=harness([],{sound:true,holdSpeech:true});
+ await h.game.travelTo('regions','travel');for(let step=0;step<3;step++)h.main.querySelector('[data-tutorial-next]').click();h.main.querySelector('[data-tutorial-look="boy"]').click();await h.advance(1500);
+ assert.match(h.main.innerHTML,/data-action="read-question"[^>]*aria-label="문제 다시 듣기"/);
+ h.press(String(h.game.nameOptions.indexOf('피카츄')+1));await h.advance(7700);
+ h.press('1');await h.advance(4000);assert.equal(h.speechWaits.length,1);assert.equal(h.game.busy,true);h.speechWaits[0].resolve(true);await h.advance(3000);
+ h.press('2');await h.advance(4000);assert.equal(h.game.battle.phase,'capture');assert.equal(h.speechWaits.length,2);assert.doesNotMatch(h.speechWaits[1].text,/조금 다가|마지막 문제|한 문제/);assert.doesNotMatch(h.main.innerHTML,/class="gb-throw-ball"/);
+ h.speechWaits[1].resolve(true);await h.advance(5000);assert.equal(h.speechWaits.length,3);assert.match(h.speechWaits[2].text,/몬스터볼/);assert.equal(h.game.battle.phase,'capture','가랏 대사를 읽는 동안 아직 던지지 않음');
+ h.speechWaits[2].resolve(true);await h.advance(9800);assert.equal(h.game.battle.phase,'caught');assert.deepEqual([...h.storage.state.caught],[25]);
+});
+
+test('포획 대사 중 설정을 열면 공 던지기를 멈추고 닫은 뒤 대사를 다시 읽는다',async()=>{
+ const h=harness([],{sound:true,holdSpeech:true});await h.game.travelTo('regions','travel');for(let n=0;n<3;n++)h.main.querySelector('[data-tutorial-next]').click();h.main.querySelector('[data-tutorial-look="boy"]').click();await h.advance(1500);h.press(String(h.game.nameOptions.indexOf('피카츄')+1));await h.advance(7700);
+ h.press('1');await h.advance(4000);h.speechWaits[0].resolve(true);await h.advance(3000);h.press('2');await h.advance(4000);h.speechWaits[1].resolve(true);await h.advance(1000);assert.equal(h.speechWaits.length,3);
+ const modal=h.node('#modal-root');Object.defineProperty(modal,'firstChild',{get(){return this.innerHTML?{}:null;}});
+ h.click('[data-action]',{action:'settings'});h.speechWaits[2].resolve(false);await h.advance(10000);assert.equal(h.game.battle.phase,'capture');assert.deepEqual([...h.storage.state.caught],[]);
+ h.click('[data-action]',{action:'close-modal'});await h.advance(250);assert.equal(h.speechWaits.length,4);assert.equal(h.speechWaits[3].text,h.speechWaits[2].text);h.speechWaits[3].resolve(true);await h.advance(9800);assert.equal(h.game.battle.phase,'caught');
 });

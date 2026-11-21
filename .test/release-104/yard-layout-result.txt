@@ -1,0 +1,5 @@
+QA_YARD_LAYOUT {"width":393,"columns":"107.328px 107.328px 107.344px","headerClear":true,"thirdTop":567.390625,"thirdBottom":788.4375,"height":740,"thirdPeek":true}
+QA_YARD_LAYOUT {"width":734,"columns":"221px 221px 221px","headerClear":true,"thirdTop":425.296875,"thirdBottom":575.296875,"height":393,"thirdPeek":false}
+QA_YARD_LAYOUT {"width":1024,"columns":"221.328px 221.328px 221.328px","headerClear":true,"thirdTop":587.046875,"thirdBottom":817.921875,"height":768,"thirdPeek":true}
+QA_RESULT pass
+None

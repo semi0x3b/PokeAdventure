@@ -56,3 +56,16 @@ img.learning-picture {
   line-height: 1.5;
   vertical-align: middle;
 }
+
+/* 큰 수 가르기의 10개 묶음. 낱개와 같은 학습 그림을 하나 넣고 묶음 크기만 표시한다. */
+.learning-ten {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--ball) * .15);
+  padding: calc(var(--ball) * .15);
+  border: var(--border);
+  border-radius: calc(var(--ball) * .2);
+  background: var(--c-surface);
+  font-size: calc(var(--ball) * .65);
+  line-height: 1;
+}

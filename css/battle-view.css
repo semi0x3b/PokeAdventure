@@ -381,6 +381,9 @@ body[data-screen=battle] .page-footer { display: none; }
 }
 .gb-area .ui-icon { width: 24px; height: 24px; }
 .gb-area .gb-tag-ball { width: 28px; height: 28px; }
+.gb-area.gb-read-question { width: var(--touch); height: var(--touch); padding: 0; background: var(--c-blue); box-shadow: var(--press); cursor: pointer; }
+.gb-read-question:disabled { opacity: .45; cursor: default; }
+.gb-read-question:active { transform: translateY(3px); box-shadow: var(--press-down); }
 .gb-area:has(.icon-math) { background: var(--c-primary); color: var(--c-on-primary); }
 .gb-area:has(.icon-korean) { background: var(--c-blue); color: var(--c-on-primary); }
 .gb-area:has(.icon-english) { background: var(--c-green); color: var(--c-ink); }
@@ -1151,7 +1154,7 @@ body[data-screen=battle] .page-footer { display: none; }
   }
 }
 @media (orientation: landscape) and (max-height: 360px) {
-  .gb-ask:has(> .gb-question.is-long) > .gb-area { display: none; }
+  .gb-ask:has(> .gb-question.is-long) > .gb-area:not(.gb-read-question) { display: none; }
 }
 /* 잡았다 카드(가로 폰): 오른쪽 칸(등급·이름·축하 줄·버튼 둘)이 키 343 화면(사파리 가로, 아래 안전 영역 21px)에서 카드를 넘어
    「다른 마을 가기」가 아래 빨강 띠에 걸렸다(734×343 도 2px). 줄 사이 14px 칸(위아래 빈 줄 포함 넷)을 축하 줄 위아래 6px 로, 카드 위아래 안쪽 여백을
