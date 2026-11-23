@@ -30,6 +30,25 @@ const bounds = path => ({ left: Math.min(...path.map(p => p.x)), right: Math.max
 const area = path => path.slice(1).reduce((sum, p, i) => sum + path[i].x * p.y - p.x * path[i].y, 0);
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
+test('소문자 e는 가운데 왼쪽에서 곧게 오른쪽으로 긋고 위·왼쪽·아래 순서로 돈다', () => {
+  const [path] = letters.glyph('e').strokes;
+  const box = bounds(path);
+  const crossbarEnd = path.findIndex(point => point.x >= box.right - 5);
+  assert.ok(crossbarEnd > 5, '가로획을 생략하지 않음');
+  const bar = path.slice(0, crossbarEnd + 1);
+  assert.ok(bar[0].x <= box.left + 2, '가운데 왼쪽에서 시작');
+  assert.ok(Math.abs(bar[0].y - (box.top + box.bottom) / 2) < 4, '중간 높이에서 시작');
+  for (let i = 1; i < bar.length; i++) {
+    assert.ok(Math.abs(bar[i].y - bar[0].y) < .75, '처음에 아래로 내려갔다 올라오는 갈고리 없음');
+    assert.ok(bar[i].x > bar[i - 1].x, '가로획은 오른쪽으로 진행');
+  }
+  const top = path.findIndex(point => point.y === box.top);
+  const left = path.findIndex((point, index) => index > top && point.x === box.left);
+  const bottom = path.findIndex((point, index) => index > left && point.y === box.bottom);
+  assert.ok(top > crossbarEnd && left > top && bottom > left, '가로 뒤 위→왼쪽→아래 순서');
+  assert.ok(path.at(-1).x > (box.left + box.right) / 2 && path.at(-1).y > bar[0].y, '오른쪽 아래에서 마침');
+});
+
 test('영문 대소문자 52자의 획수·시작 방향·구성 요소를 기하적으로 검사한다', () => {
   assert.equal(Object.keys(roles).length, 52);
   for (const [character, expected] of Object.entries(roles)) {
