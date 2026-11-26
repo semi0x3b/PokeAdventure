@@ -143,9 +143,13 @@
       ...(Array.isArray(state.yard) ? { yard: [...state.yard] } : {}),
       ...(state.yards && typeof state.yards === 'object' ? { yards: copyYards(state.yards) } : {}),
       ...(Array.isArray(state.yardsOpen) ? { yardsOpen: [...state.yardsOpen] } : {}),
-      ...(Array.isArray(state.seen) ? { seen: [...state.seen] } : {})
+      ...(Array.isArray(state.seen) ? { seen: [...state.seen] } : {}),
+      ...(moodsOf(state) ? { moods: { ...state.moods } } : {})
     };
   }
+  // 하루 기분 스티커(출석 도장 창). 날짜(한국시간) → 기분 id. 보상과는 상관없다.
+  const MOODS = Object.freeze(['joy', 'sad', 'calm', 'angry']);
+  function moodsOf(state) { return state.moods && typeof state.moods === 'object' ? state.moods : null; }
   function mergeState(server, local) {
     // 처음부터 다시 하기(서버가 매긴 resetAt): 두 쪽 초기화 시각이 다르면 나중에 초기화한 쪽을 통째로 쓴다(앞선 쪽 기록은 섞지 않는다).
     const serverReset = server.resetAt || 0, localReset = local.resetAt || 0;
@@ -158,6 +162,9 @@
     const opened = [server.yardsOpen, local.yardsOpen].filter(Array.isArray);
     // 처음 화면 안내를 본 기록(seen: 소개를 본 것·들어가 본 메뉴)은 서버처럼 합집합. 두 쪽 다 없으면 넣지 않는다.
     const seenLists = [server.seen, local.seen].filter(Array.isArray);
+    // 기분 스티커는 날짜별 합집합. 같은 날을 두 쪽이 다르게 골랐으면 나중에 저장한(updatedAt) 쪽. 두 쪽 다 없으면 넣지 않는다.
+    const [moodNewer, moodOlder] = (local.updatedAt || 0) >= (server.updatedAt || 0) ? [local, server] : [server, local];
+    const moods = moodsOf(server) || moodsOf(local) ? { ...moodsOf(moodOlder), ...moodsOf(moodNewer) } : null;
     return {
       ...server, ...local,
       stampRewards: Math.max(server.stampRewards || 0, local.stampRewards || 0),
@@ -169,7 +176,8 @@
       ...(Array.isArray(yard) ? { yard: [...yard] } : {}),
       ...(yards && typeof yards === 'object' ? { yards: copyYards(yards) } : {}),
       ...(opened.length ? { yardsOpen: [...new Set(opened.flat())] } : {}),
-      ...(seenLists.length ? { seen: [...new Set(seenLists.flat())].sort() } : {})
+      ...(seenLists.length ? { seen: [...new Set(seenLists.flat())].sort() } : {}),
+      ...(moods ? { moods } : {})
     };
   }
   function shuffle(items, random = Math.random) {
@@ -199,5 +207,5 @@
     if (difficulty < MAX_DIFFICULTY) patch.difficulty = difficulty + 1;
     return Object.keys(patch).length ? patch : null;
   }
-  root.GameRules = { companionCapacity, LEVEL_UP_STREAK, MAX_DIFFICULTY, nextStreak, harderSettings, REGIONS, generation, pool, choose, newBattle, answer, startQuestions, mergeState, stampGift, wordGift, grassStep, GRASS, grade, pickByGrade, bodySize, GRADE_WEIGHTS, EARLY_FAVORITES, EARLY_FAVORITES_CHANCE, GIFT_GRADE_WEIGHTS, shuffle, STAMPS_PER_GIFT: 5, WORDS_PER_GIFT: 5 };
+  root.GameRules = { companionCapacity, MOODS, LEVEL_UP_STREAK, MAX_DIFFICULTY, nextStreak, harderSettings, REGIONS, generation, pool, choose, newBattle, answer, startQuestions, mergeState, stampGift, wordGift, grassStep, GRASS, grade, pickByGrade, bodySize, GRADE_WEIGHTS, EARLY_FAVORITES, EARLY_FAVORITES_CHANCE, GIFT_GRADE_WEIGHTS, shuffle, STAMPS_PER_GIFT: 5, WORDS_PER_GIFT: 5 };
 })(window);

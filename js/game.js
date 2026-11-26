@@ -345,6 +345,24 @@
     try { await S.logout(); } catch (error) { toast(error.message); }
     lockedScreen();
   }
+  function titleInput(cycle = stampCycle()) {
+    return {
+      trainerName: S.user?.name, caught: S.state.caught.length, collected: cycle.stamps.length, per: STAMPS_PER_GIFT, ready: cycle.ready,
+      badge: badgeSource(Math.max(1, cycle.stamps.length), cycle.stamps.length > 0),
+      mood: todayMood(), moodAt: cycle.stamps.indexOf(todayKey())
+    };
+  }
+  // 처음 화면 위 도장판에서 기분을 고른 뒤: 출석 카드만 새로 그린다(장면 전체를 다시 그리면 등장 움직임·안내가 다시 나온다).
+  function refreshTitleStampCard() {
+    const card = main.querySelector?.('.title-scene .stamp-card');
+    if (!card) return;
+    const box = document.createElement('div');
+    box.innerHTML = TitlePoster.render(titleInput());
+    const fresh = box.querySelector('.stamp-card');
+    if (!fresh) return;
+    fresh.classList.remove('pop');
+    card.replaceWith(fresh);
+  }
   function title() {
     if (sessionLocked || !S.user) { lockedScreen(); return; }
     document.body.dataset.screen = 'title';
@@ -353,11 +371,7 @@
     const cycle = stampCycle();
     // 처음 들어올 때만 차례로 톡톡 등장한다. 로그인 확인 등으로 다시 그릴 때는 그대로 둔다.
     const entering = !main.querySelector?.('.title-scene');
-    main.innerHTML = TitlePoster.render({
-      trainerName: S.user?.name, caught: S.state.caught.length, collected: cycle.stamps.length, per: STAMPS_PER_GIFT, ready: cycle.ready,
-      entering, badge: badgeSource(Math.max(1, cycle.stamps.length), cycle.stamps.length > 0),
-      ambient: window.AmbientScene?.html('forest') || ''
-    });
+    main.innerHTML = TitlePoster.render({ ...titleInput(cycle), entering, ambient: window.AmbientScene?.html('forest') || '' });
     // 오늘 도장판이 저절로 뜨면(아래) 그 안내가 대신한다.
     if (entering) window.VoiceGuide?.say('title', { guard: () => screen === 'title' && !modalRoot.firstChild });
     // 메뉴 반짝 표시와 한 번만 보는 기능 소개. 소개는 아래 오늘 도장판·선물 장면이 닫히고 안내 말이 끝난 뒤에 시작한다.
@@ -377,7 +391,11 @@
     stampsModal(true);
     // 저절로 뜬 도장판은 오늘 도장이 쾅 찍히는 연출(약 1.6초)이 끝나면 스르르 닫혀 「모험 시작」을 가리지 않는다(2026-11-13 Aside QA).
     // 선물 상자가 열릴 차례면 「열기!」를 눌러야 하니 그대로 둔다. 아이가 먼저 닫았거나 다른 창을 열었으면 손대지 않는다.
-    if (stampCycle().ready) return;
+    // 오늘 기분을 아직 안 골랐으면 고를 때까지 둔다(고르면 pickMood 가 닫는다).
+    if (stampCycle().ready || !todayMood()) return;
+    closeStampBoardSoon();
+  }
+  function closeStampBoardSoon() {
     const board = modalRoot.querySelector?.('.modal--stamps');
     const stillBoard = () => board?.isConnected && modalRoot.querySelector?.('.modal--stamps') === board;
     setTimeout(() => {
@@ -1725,7 +1743,7 @@
     if (dialog && previousScroll) dialog.scrollTop = previousScroll;
   }
   function showCredits() {
-    showModal('<h2 id="modal-title">그림·소리 출처</h2>', '<div class="asset-credits"><p>포켓몬 이름·타입·공식 그림·스프라이트·울음소리: <a href="https://pokeapi.co/" target="_blank" rel="noopener noreferrer">PokeAPI</a>.</p><p>숲·마을·사막 배틀 배경: Nidhoggn, <a href="https://opengameart.org/content/backgrounds-3" target="_blank" rel="noopener noreferrer">Backgrounds</a>, CC0.</p><p>바다 배틀 배경: CraftPix.net 2D Game Assets, <a href="https://opengameart.org/content/beach-2d-backgrounds" target="_blank" rel="noopener noreferrer">Beach 2D Backgrounds</a>, <a href="https://static.opengameart.org/OGA-BY-3.0.txt" target="_blank" rel="noopener noreferrer">OGA-BY 3.0</a>.</p><p>문제 그림: <a href="https://arasaac.org" target="_blank" rel="noopener noreferrer">ARASAAC 픽토그램</a> — 저작자 Sergio Palao, 소유 아라곤 자치정부(스페인), <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.</p><p>필드 도트 타일: <a href="https://pixel-boy.itch.io/ninja-adventure-asset-pack" target="_blank" rel="noopener noreferrer">Ninja Adventure</a>, pixel-boy, CC0.</p><p>필드 동행 픽셀 포켓몬: <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener noreferrer">PMDCollab SpriteCollab</a>. <a href="https://github.com/semi0x3b/PokeAdventure/blob/main/docs/field-sprites/CREDITS.md" target="_blank" rel="noopener noreferrer">포켓몬별 작가·출처·사용 조건</a>을 확인해 주세요.</p><p>타이틀 로고·지역 그림·출석 도장·트레이너: 이 게임을 위해 만든 그림.</p><p>아이콘: <a href="https://kenney.nl/assets/game-icons" target="_blank" rel="noopener noreferrer">Kenney</a>, CC0.</p><p>배경 음악·징글: <a href="https://pixel-boy.itch.io/ninja-adventure-asset-pack" target="_blank" rel="noopener noreferrer">Ninja Adventure</a>(Pixel-boy·AAA), CC0.</p><p>효과음은 브라우저에서 합성합니다.</p><p>기존 포켓몬 게임 음악·주제가는 넣지 않았습니다.</p></div>');
+    showModal('<h2 id="modal-title">그림·소리 출처</h2>', '<div class="asset-credits"><p>포켓몬 이름·타입·공식 그림·스프라이트·울음소리: <a href="https://pokeapi.co/" target="_blank" rel="noopener noreferrer">PokeAPI</a>.</p><p>숲·마을·사막 배틀 배경: Nidhoggn, <a href="https://opengameart.org/content/backgrounds-3" target="_blank" rel="noopener noreferrer">Backgrounds</a>, CC0.</p><p>바다 배틀 배경: CraftPix.net 2D Game Assets, <a href="https://opengameart.org/content/beach-2d-backgrounds" target="_blank" rel="noopener noreferrer">Beach 2D Backgrounds</a>, <a href="https://static.opengameart.org/OGA-BY-3.0.txt" target="_blank" rel="noopener noreferrer">OGA-BY 3.0</a>.</p><p>문제 그림: <a href="https://arasaac.org" target="_blank" rel="noopener noreferrer">ARASAAC 픽토그램</a> — 저작자 Sergio Palao, 소유 아라곤 자치정부(스페인), <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.</p><p>필드 도트 타일: <a href="https://pixel-boy.itch.io/ninja-adventure-asset-pack" target="_blank" rel="noopener noreferrer">Ninja Adventure</a>, pixel-boy, CC0.</p><p>필드 동행 픽셀 포켓몬: <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener noreferrer">PMDCollab SpriteCollab</a>. <a href="https://github.com/semi0x3b/PokeAdventure/blob/main/docs/field-sprites/CREDITS.md" target="_blank" rel="noopener noreferrer">포켓몬별 작가·출처·사용 조건</a>을 확인해 주세요.</p><p>타이틀 로고·지역 그림·출석 도장·기분 스티커·트레이너: 이 게임을 위해 만든 그림.</p><p>아이콘: <a href="https://kenney.nl/assets/game-icons" target="_blank" rel="noopener noreferrer">Kenney</a>, CC0.</p><p>배경 음악·징글: <a href="https://pixel-boy.itch.io/ninja-adventure-asset-pack" target="_blank" rel="noopener noreferrer">Ninja Adventure</a>(Pixel-boy·AAA), CC0.</p><p>효과음은 브라우저에서 합성합니다.</p><p>기존 포켓몬 게임 음악·주제가는 넣지 않았습니다.</p></div>');
   }
   // 처음부터 다시 하기 확인 창(부모 안내라 존댓말): 지워지는 것·남는 것·되돌릴 수 없음을 짧게 적고, 비밀번호 4자리(로그인 창 PIN 칸과 같은 꼴,
   // 숫자 키보드)를 다 넣어야 「지우고 처음부터」가 켜진다. 요청 중에는 닫기·그만두기·지우기를 모두 잠근다.
@@ -1734,7 +1752,7 @@
     if (!S.user) return;
     const icon = name => `<span class="ui-icon icon-${name}" aria-hidden="true"></span>`;
     const submitLabel = text => icon('retry') + text;
-    showModal('<h2 id="modal-title">처음부터 다시 할까요?</h2>', `<form id="reset-form" class="reset-form" novalidate><p class="reset-note">잡은 포켓몬 ${S.state.caught.length}마리, 출석 도장, 글자 쓰기 기록이 지워져요.</p><p class="reset-note">학습 단계와 소리 설정은 그대로 남아요.</p><p class="reset-warning">되돌릴 수 없어요.</p><label class="form-field pin-field">숫자 4자리 비밀번호<input class="pin-input" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off"><span class="pin-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span></label><div class="form-error" id="reset-error" role="alert"></div><div class="modal-actions reset-actions"><button class="button" type="submit" disabled>${submitLabel('지우고 처음부터')}</button><button type="button" class="button secondary" data-action="close-modal">그만두기</button></div></form>`, 'modal--form');
+    showModal('<h2 id="modal-title">처음부터 다시 할까요?</h2>', `<form id="reset-form" class="reset-form" novalidate><p class="reset-note">잡은 포켓몬 ${S.state.caught.length}마리, 출석 도장, 기분 스티커, 글자 쓰기 기록이 지워져요.</p><p class="reset-note">학습 단계와 소리 설정은 그대로 남아요.</p><p class="reset-warning">되돌릴 수 없어요.</p><label class="form-field pin-field">숫자 4자리 비밀번호<input class="pin-input" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off"><span class="pin-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span></label><div class="form-error" id="reset-error" role="alert"></div><div class="modal-actions reset-actions"><button class="button" type="submit" disabled>${submitLabel('지우고 처음부터')}</button><button type="button" class="button secondary" data-action="close-modal">그만두기</button></div></form>`, 'modal--form');
     const form = modalRoot.querySelector('#reset-form');
     const pin = form.elements.pin;
     const submit = form.querySelector('[type=submit]');
@@ -1794,6 +1812,72 @@
     const name = event.detail?.name;
     if (name && name === S.user?.name) startOver(name);
   });
+  // 하루 기분 스티커(2026-11-26 사용자 「매일 감정 스티커판 … 출석체크 하는데 넣으면」): 출석 도장 창 아래에서 오늘 기분을 고르면
+  // 오늘 도장과 달력 오늘 칸에 그 색 스티커가 붙는다. 오늘 것만 다시 고를 수 있고 지난 날은 그대로 남는다. 어떤 기분이든 보상은 같다(없다).
+  const MOOD_LABELS = { joy: '기쁨', sad: '슬픔', calm: '편안함', angry: '화남' };
+  let moodMonth = '';
+  function todayMood() { return S.state.moods?.[todayKey()] || null; }
+  function moodSticker(mood, className, alt = '') {
+    if (!MOOD_LABELS[mood]) return '';
+    return `<img class="${className}" src="img/art/moods/${mood}.webp" alt="${escape(alt)}" draggable="false">`;
+  }
+  function monthShift(month, step) {
+    const [year, index] = month.split('-').map(Number);
+    const moved = new Date(Date.UTC(year, index - 1 + step, 1));
+    return moved.toISOString().slice(0, 7);
+  }
+  function moodBoard() {
+    const today = todayKey();
+    const picked = todayMood();
+    const moods = S.state.moods || {};
+    const thisMonth = today.slice(0, 7);
+    // 지난 달은 첫 스티커를 붙인 달까지만 넘긴다.
+    const firstMonth = Object.keys(moods).sort()[0]?.slice(0, 7) || thisMonth;
+    const [year, month] = moodMonth.split('-').map(Number);
+    const blanks = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+    const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const heads = ['일', '월', '화', '수', '목', '금', '토'].map(name => `<li class="mood-day-name" aria-hidden="true">${name}</li>`).join('');
+    const empty = '<li class="mood-day blank" aria-hidden="true"></li>'.repeat(blanks);
+    const cells = Array.from({ length: days }, (_, index) => {
+      const day = index + 1;
+      const key = `${moodMonth}-${String(day).padStart(2, '0')}`;
+      const mood = moods[key];
+      const classes = 'mood-day' + (key === today ? ' today' : '') + (key > today ? ' future' : '') + (mood ? ' has-mood' : '');
+      const label = `${month}월 ${day}일${mood ? ' ' + MOOD_LABELS[mood] : ''}`;
+      return `<li class="${classes}" aria-label="${label}"><span class="mood-date" aria-hidden="true">${day}</span>${moodSticker(mood, 'mood-day-sticker')}</li>`;
+    }).join('');
+    const picks = Object.entries(MOOD_LABELS).map(([mood, label]) =>
+      `<button class="mood-pick mood-pick--${mood}${picked === mood ? ' on' : ''}" data-action="mood" data-mood="${mood}" aria-pressed="${picked === mood}">${moodSticker(mood, 'mood-pick-sticker')}<span>${label}</span></button>`).join('');
+    const previous = moodMonth > firstMonth ? '' : ' disabled';
+    const next = moodMonth < thisMonth ? '' : ' disabled';
+    return `<h3 class="mood-ask" id="mood-title">${picked ? '오늘 기분 스티커' : '오늘 기분은 어때?'}</h3><div class="mood-picks">${picks}</div>`
+      + `<div class="mood-month"><button class="mood-month-step" data-action="mood-month" data-step="-1" aria-label="지난 달"${previous}><span aria-hidden="true">◀</span></button><strong>${month}월</strong><button class="mood-month-step" data-action="mood-month" data-step="1" aria-label="다음 달"${next}><span aria-hidden="true">▶</span></button></div>`
+      + `<ol class="mood-calendar">${heads}${empty}${cells}</ol>`;
+  }
+  function redrawMoodBoard() {
+    const board = modalRoot.querySelector('.mood-board');
+    if (board) board.innerHTML = moodBoard();
+  }
+  function pickMood(mood) {
+    if (!S.user || !MOOD_LABELS[mood]) return;
+    const today = todayKey();
+    if (todayMood() !== mood) S.update({ moods: { ...(S.state.moods || {}), [today]: mood } });
+    // 저장을 못 했으면(다른 창 초기화 등) 붙은 것처럼 보이지 않게 실제 기록으로 그린다.
+    if (todayMood() !== mood) { redrawMoodBoard(); return; }
+    moodMonth = today.slice(0, 7);
+    redrawMoodBoard();
+    const badge = modalRoot.querySelector('.stamp-badge.today');
+    if (badge) {
+      badge.querySelector('.stamp-mood')?.remove();
+      badge.querySelector('img')?.insertAdjacentHTML('afterend', moodSticker(mood, 'stamp-mood sticking'));
+    }
+    modalRoot.querySelector('.mood-day.today')?.classList.add('sticking');
+    refreshTitleStampCard();
+    sound('stamp');
+    window.VoiceGuide?.say('mood', { text: `${MOOD_LABELS[mood]} 스티커를 붙였어!` });
+    // 그날 처음 저절로 뜬 도장판이면 스티커가 붙는 걸 보여 주고 닫는다(기분을 고르기 전에는 닫지 않았다).
+    if (modalRoot.querySelector('.modal--stamps.stamp-auto') && !stampCycle().ready) closeStampBoardSoon();
+  }
   // 큰 도장판: 7칸마다 서로 다른 배지, 8번째 칸은 늘 보이는 선물 상자. 7개가 차면 상자가 「열기」 버튼이 된다.
   // 큰 도장판: 칸마다 서로 다른 배지, 마지막 칸은 늘 보이는 선물 상자. 다 차면 상자를 한 번 누르면 바로 선물 연출로 간다.
   function stampsModal(stampToday = false) {
@@ -1807,14 +1891,18 @@
       const date = cycle.stamps[index];
       const isToday = date === today;
       const classes = 'stamp-badge' + (date ? ' collected' : '') + (isToday ? ' today' : '') + (isToday && stampToday ? ' stamping' : '');
-      return `<li class="${classes}">${badgeImage(index + 1, Boolean(date), date ? `${index + 1}번째 도장` : `${index + 1}번째 칸`)}<span>${date ? escape(date.slice(5).replace('-', '/')) : index + 1}</span></li>`;
+      const mood = isToday ? moodSticker(todayMood(), 'stamp-mood') : '';
+      return `<li class="${classes}">${badgeImage(index + 1, Boolean(date), date ? `${index + 1}번째 도장` : `${index + 1}번째 칸`)}${mood}<span>${date ? escape(date.slice(5).replace('-', '/')) : index + 1}</span></li>`;
     }).join('');
     const gift = cycle.ready
       ? '<li class="stamp-badge gift ready"><button class="stamp-gift-open" data-action="stamp-gift-open" aria-label="출석 선물 열기"><img src="img/art/gift/gift-box.webp" alt=""><span>열기!</span></button></li>'
       : '<li class="stamp-badge gift"><img src="img/art/gift/gift-box-off.webp" alt="선물 상자(도장을 다 모으면 열려요)"><span>선물</span></li>';
     const cells = STAMPS_PER_GIFT + 1;
-    showModal(`<h2 id="modal-title">출석 도장</h2>`, `<div class="stamp-board"><ol class="stamp-badges" style="--cells:${cells};--columns:${Math.ceil(cells / 2)}">${badges}${gift}</ol></div>`, 'modal--stamps');
-    window.VoiceGuide?.say(cycle.ready ? 'giftReady' : stampToday ? 'stamp' : 'stamps');
+    // 기분 스티커와 한 창에 들어가게 도장은 한 줄(가로 화면과 같은 배치)로 놓는다.
+    moodMonth = today.slice(0, 7);
+    showModal(`<h2 id="modal-title">출석 도장</h2>`, `<div class="stamp-board"><ol class="stamp-badges" style="--cells:${cells};--columns:${cells}">${badges}${gift}</ol><section class="mood-board" aria-labelledby="mood-title">${moodBoard()}</section></div>`, 'modal--stamps' + (stampToday ? ' stamp-auto' : ''));
+    const askMood = !todayMood() && !cycle.ready;
+    window.VoiceGuide?.say(cycle.ready ? 'giftReady' : stampToday ? (askMood ? 'stampMood' : 'stamp') : (askMood ? 'moodAsk' : 'stamps'));
     // 오늘 도장이 쾅 찍히는 순간(css stamp-slam 중간)에 소리를 낸다.
     if (stampToday && modalRoot.querySelector?.('.stamp-badge.stamping')) setTimeout(() => sound('correct'), 770);
   }
@@ -2155,6 +2243,8 @@
       case 'account': authModal(); break;
       case 'stamps': stampsModal(); break;
       case 'stamp-gift-open': openStampGift(); break;
+      case 'mood': pickMood(actionElement.dataset.mood); break;
+      case 'mood-month': moodMonth = monthShift(moodMonth, Number(actionElement.dataset.step)); redrawMoodBoard(); break;
       case 'gift-close': closeStampGift(); break;
       case 'credits': showCredits(); break;
       case 'legal': showModal('<h2 id="modal-title">이용 안내</h2>', '<div class="parent-notes"><p>부모님과 함께 사용하는 비공식·비상업 개인 학습 게임입니다.</p><p>게임 기록·수첩 이름·비밀번호 확인값은 이 기기의 브라우저에 저장합니다. 게임 기록을 서버로 전송하지 않습니다.</p><p>브라우저 데이터를 지우거나 기기를 잃으면 기록을 복구하지 못할 수 있습니다. 설정에서 기록을 백업해 보관해 주세요.</p><p>포켓몬 그림·울음소리 등은 외부 자료원에서 불러오므로 해당 제공자와 호스팅 서비스에는 IP 주소 등 접속 정보가 전달될 수 있습니다.</p><p>부모 비밀번호는 어린이의 우발적 실행을 막는 앱 안 잠금입니다. 기기 자체의 잠금이나 사용 시간 제한을 대신하지 않습니다.</p><p>포켓몬 캐릭터·이름·이미지의 권리는 원 권리자에게 있으며 이 게임은 공식 제품이 아닙니다. 무료·API 사용은 별도의 이용 허가를 뜻하지 않습니다.</p><p><a href="privacy.html" target="_blank" rel="noopener noreferrer">개인정보·보관 안내</a> · <a href="terms.html" target="_blank" rel="noopener noreferrer">이용 조건</a></p></div>', 'modal--form'); break;

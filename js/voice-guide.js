@@ -47,6 +47,10 @@
     stamp: { lines: ['오늘 출석 도장 쾅!', '출석 도장을 받았어!'], count: false, delay: 1100 },
     giftReady: { lines: ['선물 상자를 눌러 봐!', '열기를 눌러 봐!'], count: false },
     stamps: { lines: ['도장을 다 모으면 선물이 와!'], full: 3, quiet: 3 },
+    // 출석 도장 창의 하루 기분 스티커(js/game.js pickMood). 아직 안 골랐을 때 묻고, 고르면 붙인 스티커를 말한다.
+    stampMood: { lines: ['출석 도장 쾅! 오늘 기분은 어때?'], count: false, delay: 1100 },
+    moodAsk: { lines: ['오늘 기분은 어때?', '오늘 기분 스티커를 골라 봐!'], count: false },
+    mood: { lines: ['{text}'], count: false },
     // 선물 공개 글: 상자가 열리고(5.8초) 울음소리(6.2초)가 끝난 뒤. 소리가 켜져 있으면 문제 읽기가 읽는다.
     gift: { lines: ['{text}'], count: false, narrated: true, delay: 7400 },
     dex: { lines: ['잡은 친구들을 볼 수 있어!', '친구를 누르면 자세히 보여!'], short: ['포켓몬 도감이야!'], full: 3, quiet: 10 },

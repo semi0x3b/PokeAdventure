@@ -557,6 +557,35 @@ img.badge-dim { filter: grayscale(1); opacity: .3; }
   55% { opacity: 1; transform: scale(.88) rotate(5deg); }
   to { opacity: 1; transform: none; }
 }
+/* ---------- 하루 기분 스티커(출석 도장 창 아래, game.js moodBoard) ---------- */
+.stamp-badge img.stamp-mood { position: absolute; z-index: 3; top: 42%; right: 2%; width: 44%; max-width: 40px; filter: drop-shadow(0 2px 2px rgba(43, 32, 54, .3)); }
+.mood-board { width: 100%; display: grid; gap: var(--gap-s); margin-top: var(--gap-s); }
+.mood-ask { margin: 0; font-size: var(--fs-m); font-weight: var(--fw-heavy); color: var(--c-ink); }
+.mood-picks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap-s); }
+.mood-pick { display: grid; justify-items: center; gap: 2px; min-height: var(--touch); padding: 6px 2px; border: var(--border-strong); border-radius: var(--r-m); background: var(--c-surface); box-shadow: var(--press); font: inherit; font-size: var(--fs-s); font-weight: var(--fw-heavy); color: var(--c-ink); cursor: pointer; }
+.mood-pick:active { transform: translateY(3px); box-shadow: var(--press-down); }
+.mood-pick-sticker { width: 100%; max-width: 60px; aspect-ratio: 1; object-fit: contain; }
+.mood-pick.on { background: var(--c-paper); outline: 4px solid var(--c-gold); outline-offset: 0; }
+.mood-pick--joy.on { outline-color: var(--c-gold); }
+.mood-pick--sad.on { outline-color: var(--c-blue); }
+.mood-pick--calm.on { outline-color: var(--c-green); }
+.mood-pick--angry.on { outline-color: var(--c-primary); }
+.mood-month { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-m); font-weight: var(--fw-heavy); color: var(--c-ink); }
+.mood-month-step { width: 44px; height: 40px; border: var(--border-strong); border-radius: var(--r-s); background: var(--c-surface); box-shadow: var(--press); font: inherit; font-size: var(--fs-s); color: var(--c-ink); cursor: pointer; }
+.mood-month-step:disabled { opacity: .3; box-shadow: none; cursor: default; }
+.mood-calendar { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mood-day-name { font-size: 13px; font-weight: var(--fw-bold); color: var(--c-ink-soft); }
+.mood-day { position: relative; display: grid; place-items: center; height: 40px; border-radius: var(--r-s); background: var(--c-line); font-size: 13px; font-weight: var(--fw-bold); color: var(--c-ink-soft); }
+.mood-day.blank { background: none; }
+.mood-day.future { background: none; color: var(--c-disabled-ink); opacity: .6; }
+.mood-day.today { background: var(--c-surface); outline: 3px solid var(--c-primary); color: var(--c-primary-press); }
+.mood-day.has-mood .mood-date { position: absolute; z-index: 1; top: 0; left: 3px; font-size: 10px; }
+.mood-day-sticker { width: 36px; height: 36px; object-fit: contain; }
+/* 고른 순간: 스티커가 톡 내려와 붙는다. */
+.mood-day.sticking .mood-day-sticker, .stamp-badge img.stamp-mood.sticking { animation: mood-stick .55s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes mood-stick { from { opacity: 0; transform: scale(2.2) rotate(-18deg); } to { opacity: 1; transform: none; } }
+.stamp-card-badge { position: relative; display: flex; flex: 0 1 auto; min-width: 0; }
+.stamp-card-badges img.stamp-card-mood { position: absolute; right: -6px; bottom: -4px; flex: none; width: 24px; height: 24px; }
 .stamp-gift-open {
   position: relative;
   z-index: 1;
@@ -782,6 +811,7 @@ img.badge-dim { filter: grayscale(1); opacity: .3; }
   .is-entering .pop, .modal, .modal-backdrop, .title-cloud, .title-pokemon img, .title-pokemon::after,
   .menu-card--start .ui-icon, .menu-card--start::after, .stamp-card.ready .stamp-card-gift img, .stamp-card.ready .stamp-card-gift::before,
   .stamp-badge.today::before, .stamp-badge.gift.ready::before, .stamp-badge.stamping img, .stamp-badge.stamping::after, .stamp-gift-open img,
+  .mood-day.sticking .mood-day-sticker, .stamp-badge img.stamp-mood.sticking,
   .gift-rays, .gift-scene .gift-chest-closed, .gift-scene .gift-ball, .gift-scene.revealed .gift-pokemon, .gift-scene.revealed::after,
   .gift-scene.revealed .gift-message, .gift-scene.revealed > .button, .region-card.is-picked,
   .region-pokemon img, .region-pokemon::after, .ambient-accent {
