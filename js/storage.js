@@ -8,7 +8,7 @@
   const ITERATIONS = 600000;
   const MAX_BACKUP = 256 * 1024;
   const LOCK_MS = 15 * 60 * 1000;
-  const STATE_KEYS = ['caught', 'stamps', 'companion', 'companions', 'yard', 'yards', 'yardsOpen', 'seen', 'stampRewards', 'wordsWritten', 'wordRewards', 'settings', 'updatedAt', 'preferencesUpdatedAt', 'resetAt'];
+  const STATE_KEYS = ['caught', 'stamps', 'companion', 'companions', 'yard', 'yards', 'yardsOpen', 'seen', 'stampRewards', 'wordsWritten', 'wordRewards', 'moods', 'settings', 'updatedAt', 'preferencesUpdatedAt', 'resetAt'];
   const SETTINGS_KEYS = ['sound', 'area', 'difficulty', 'readAloud', 'music', 'voiceGuide', 'trainerLook', 'mathMax', 'koreanLevel', 'englishLevel'];
   // js/yard.js THEMES 와 같은 id(풀밭 마당 meadow 는 옛 yard 칸). 열쇠로 여는 마을은 눈의 마을을 뺀 나머지.
   const YARD_THEMES = ['snow', 'forest', 'sea', 'doll', 'robot', 'car', 'dino', 'sweets', 'cherry', 'space', 'gem', 'desert', 'autumn', 'flower'];
@@ -90,6 +90,13 @@
       check(Array.isArray(result.yardsOpen) && result.yardsOpen.every(id => YARD_KEY_THEMES.includes(id)) && new Set(result.yardsOpen).size === result.yardsOpen.length, '마을 기록이 올바르지 않아요.');
       if (strict) check(result.yardsOpen.length <= yardKeys(result.caught.length), '마을 기록이 올바르지 않아요.');
       result.yardsOpen = result.yardsOpen.slice(0, yardKeys(result.caught.length));
+    }
+    // 하루 기분 스티커(날짜 → 기분). 처음 고르기 전에는 저장하지 않는다(yards 와 같은 이유).
+    if (result.moods === undefined) delete result.moods;
+    else {
+      const entries = object(result.moods) ? Object.entries(result.moods) : null;
+      check(entries && entries.length <= 15000 && entries.every(([day, mood]) => date(day) && root.GameRules.MOODS.includes(mood)), '기분 스티커 기록이 올바르지 않아요.');
+      result.moods = Object.fromEntries(entries.sort(([a], [b]) => a < b ? -1 : 1));
     }
     check(Array.isArray(result.seen) && result.seen.length <= SEEN.length && result.seen.every(name => SEEN.includes(name)) && new Set(result.seen).size === result.seen.length, '안내 기록이 올바르지 않아요.');
     result.seen = [...result.seen].sort();
@@ -302,7 +309,7 @@
     try { backup = JSON.parse(raw); } catch { throw new Error('백업 파일을 읽지 못했어요. JSON 파일을 골라 주세요.'); }
     safeTree(backup); limitedKeys(backup, ['format', 'version', 'exportedAt', 'state']);
     check(backup.format === 'poke-adventure-device-backup' && backup.version === VERSION && time(backup.exportedAt), '백업 파일 버전과 날짜를 확인해 주세요.');
-    check(object(backup.state) && STATE_KEYS.every(key=>key==='yards'||key==='yardsOpen'||Object.hasOwn(backup.state,key)), '백업에 필요한 진행 기록이 빠져 있어요. 원래 백업 파일을 골라 주세요.');
+    check(object(backup.state) && STATE_KEYS.every(key=>key==='yards'||key==='yardsOpen'||key==='moods'||Object.hasOwn(backup.state,key)), '백업에 필요한 진행 기록이 빠져 있어요. 원래 백업 파일을 골라 주세요.');
     const next = validatedState(backup.state), latest = freshRecord();
     next.resetAt = Math.max(Date.now(), state.resetAt + 1, latest.state.resetAt + 1); next.updatedAt = next.resetAt; next.preferencesUpdatedAt = next.resetAt;
     save(nextRecord(latest, { state: next }));
